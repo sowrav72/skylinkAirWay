@@ -106,11 +106,10 @@ body {
   font-family: "Playfair Display", Georgia, serif;
   font-size: clamp(2rem, 5vw, 3.9rem);
   line-height: 1.1;
-  background: linear-gradient(95deg, #73c2fb 10%, #1f75fe 55%, #e0ffff 100%);
+  background: linear-gradient(95deg, #ffffff 0%, #e0ffff 50%, #b3d9ff 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  text-shadow: 0 0 30px rgba(115, 194, 251, 0.5);
 }
 
 .subtitle {
