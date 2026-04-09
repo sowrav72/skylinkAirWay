@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: skylinkairway-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: FRONTEND_URL
+        value: https://skylinkairway-frontend.onrender.com
+      - key: DATABASE_URL
+        sync: false
+
+  - type: static
+    name: skylinkairway-frontend
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: build
+    pullRequestPreviewsEnabled: true
+    envVars:
+      - key: REACT_APP_API_URL
+        value: https://skylinkairway-backend.onrender.com
