@@ -5,14 +5,6 @@ import Navbar from "./Navbar";
 import Login from "./Login";
 import Register from "./Register";
 
-const navItems = [
-  { label: "Home", href: "#home" },
-  { label: "Destinations", href: "#destinations" },
-  { label: "Experience", href: "#experience" },
-  { label: "Offers", href: "#offers" },
-  { label: "About", href: "#about" },
-];
-
 const tripTypes = ["One Way", "Round Trip", "Multi-City"];
 const popularRoutes = ["JFK → LHR", "SFO → NRT", "MIA → MAD", "DXB → SYD"];
 
@@ -225,7 +217,7 @@ function Home() {
 export default function App() {
   return (
     <div className="app-shell">
-      <Navbar navItems={navItems} />
+      <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
