@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -110,11 +111,12 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-container">
-      <h2>Create Account</h2>
-      <p className="auth-subtitle">Join Skylink and start your journey ✈️</p>
+    <div className="auth-page">
+      <div className="glass-container">
+        <h2>Create Account</h2>
+        <p className="auth-subtitle">Join Skylink and start your journey ✈️</p>
 
-      <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit}>
         {/* NAME */}
         <label htmlFor="name">Full Name</label>
         <input
@@ -190,8 +192,9 @@ export default function Register() {
 
       {/* FOOTER */}
       <p className="auth-footer">
-        Already have an account? <a href="#">Login</a>
+        Already have an account? <Link to="/login">Login</Link>
       </p>
+      </div>
     </div>
   );
 }

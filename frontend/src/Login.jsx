@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -82,11 +83,12 @@ export default function Login() {
   };
 
   return (
-    <div className="auth-container">
-      <h2>Welcome Back</h2>
-      <p className="auth-subtitle">Sign in to continue your journey ✈️</p>
+    <div className="auth-page">
+      <div className="glass-container">
+        <h2>Welcome Back</h2>
+        <p className="auth-subtitle">Sign in to continue your journey ✈️</p>
 
-      <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit}>
         {/* EMAIL */}
         <label htmlFor="email">Email</label>
         <input
@@ -139,8 +141,9 @@ export default function Login() {
 
       {/* FOOTER */}
       <p className="auth-footer">
-        Don’t have an account? <a href="#">Sign up</a>
+        Don't have an account? <Link to="/register">Sign up</Link>
       </p>
+      </div>
     </div>
   );
 }

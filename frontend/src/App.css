@@ -510,6 +510,172 @@
   margin-top: 0.35rem;
 }
 
+/* Glass Container for Auth Pages */
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(225, 235, 238, 0.24) 0%, transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(24, 119, 242, 0.26) 0%, transparent 35%),
+    linear-gradient(180deg, #001a52 0%, #00308f 58%, #001540 100%);
+}
+
+.glass-container {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 3rem 2rem;
+  box-shadow: 0 8px 32px rgba(0, 48, 143, 0.35);
+  width: 100%;
+  max-width: 420px;
+  animation: slideUp 0.5s ease-out;
+}
+
+.glass-container h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.8rem;
+  color: #e0ffff;
+  text-align: center;
+}
+
+.glass-container .auth-subtitle {
+  text-align: center;
+  color: rgba(224, 255, 255, 0.85);
+  margin-bottom: 2rem;
+}
+
+.glass-container .auth-form {
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.glass-container .auth-form label {
+  color: rgba(224, 255, 255, 0.9);
+  font-weight: 500;
+}
+
+.glass-container .auth-form input {
+  background: rgba(1, 16, 62, 0.4);
+  border: 1px solid rgba(225, 235, 238, 0.2);
+  backdrop-filter: blur(5px);
+  color: #f7fdff;
+  transition: all 0.3s ease;
+}
+
+.glass-container .auth-form input:focus {
+  background: rgba(1, 16, 62, 0.6);
+  border-color: rgba(24, 119, 242, 0.6);
+  box-shadow: 0 0 0 3px rgba(24, 119, 242, 0.2);
+}
+
+.glass-container .auth-form input::placeholder {
+  color: rgba(224, 255, 255, 0.5);
+}
+
+.glass-container .auth-options {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.glass-container .remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(224, 255, 255, 0.85);
+  cursor: pointer;
+}
+
+.glass-container .remember input {
+  width: auto;
+}
+
+.glass-container .forgot-link {
+  color: rgba(24, 119, 242, 0.9);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.glass-container .forgot-link:hover {
+  color: #64b5f6;
+}
+
+.glass-container .error {
+  color: #ff6b6b;
+  font-size: 0.8rem;
+  margin-top: -0.8rem;
+}
+
+.glass-container .server-error {
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 107, 107, 0.4);
+  color: #ff9999;
+  padding: 0.8rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.glass-container .primary-btn {
+  width: 100%;
+  padding: 0.9rem 1.5rem;
+  background: linear-gradient(135deg, rgba(24, 119, 242, 0.9) 0%, rgba(24, 119, 242, 0.7) 100%);
+  color: white;
+  border: 1px solid rgba(24, 119, 242, 0.5);
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.glass-container .primary-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(24, 119, 242, 1) 0%, rgba(24, 119, 242, 0.85) 100%);
+  box-shadow: 0 4px 15px rgba(24, 119, 242, 0.4);
+  transform: translateY(-2px);
+}
+
+.glass-container .primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.glass-container .auth-footer {
+  text-align: center;
+  color: rgba(224, 255, 255, 0.75);
+  margin: 1rem 0 0;
+  font-size: 0.95rem;
+}
+
+.glass-container .auth-footer a {
+  color: rgba(24, 119, 242, 0.9);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.3s;
+}
+
+.glass-container .auth-footer a:hover {
+  color: #64b5f6;
+  text-decoration: underline;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
  @media (max-width: 920px) {
    .nav-links {
      display: none;
