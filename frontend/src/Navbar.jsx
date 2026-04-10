@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import "./Navbar.css";
 
 const Navbar = ({ navItems = [] }) => {
@@ -8,7 +9,9 @@ const Navbar = ({ navItems = [] }) => {
     <header className="navbar">
       <div className="nav-inner">
         <div className="logo">
-          Skylink <em>AirWay</em>
+          <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
+            Skylink <em>AirWay</em>
+          </Link>
         </div>
 
         <nav className={`nav-links ${menuOpen ? "open" : ""}`}>
@@ -20,8 +23,8 @@ const Navbar = ({ navItems = [] }) => {
         </nav>
 
         <div className="nav-right">
-          <a href="#account" className="nbtn-ghost">Sign In</a>
-          <a href="#account" className="nbtn-solid">Register</a>
+          <Link to="/login" className="nbtn-ghost" onClick={() => setMenuOpen(false)}>Sign In</Link>
+          <Link to="/register" className="nbtn-solid" onClick={() => setMenuOpen(false)}>Register</Link>
           <button
             className="hamburger"
             onClick={() => setMenuOpen(!menuOpen)}

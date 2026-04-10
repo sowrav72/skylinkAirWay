@@ -1,5 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Routes, Route } from "react-router-dom";
 import "./App.css";
+import Navbar from "./Navbar";
+import Login from "./Login";
+import Register from "./Register";
 
 const navItems = [
   { label: "Home", href: "#home" },
@@ -66,7 +70,8 @@ const features = [
   },
 ];
 
-export default function App() {
+// Home page component
+function Home() {
   const [health, setHealth] = useState("loading...");
   const [activeTripType, setActiveTripType] = useState(tripTypes[0]);
 
@@ -93,30 +98,7 @@ export default function App() {
   );
 
   return (
-    <div className="app-shell">
-      {/* NAV */}
-      <header className="top-nav">
-        <div className="nav-inner">
-          <div className="brand">
-            Sky<em>link</em>
-          </div>
-
-          <ul className="nav-links">
-            {navItems.map((item) => (
-              <li key={item.label}>
-                <a href={item.href}>{item.label}</a>
-              </li>
-            ))}
-          </ul>
-
-          <div className="nav-actions">
-            <button className="ghost-btn">Login</button>
-            <button className="primary-btn">Sign Up</button>
-          </div>
-        </div>
-      </header>
-
-      <main>
+    <main>
         {/* HERO */}
         <section className="hero" id="home">
           <div className="stars">
@@ -237,6 +219,18 @@ export default function App() {
           </p>
         </section>
       </main>
+    );
+}
+
+export default function App() {
+  return (
+    <div className="app-shell">
+      <Navbar navItems={navItems} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
     </div>
   );
 }
