@@ -442,8 +442,7 @@
  }
  
  @media (max-width: 640px) {
-   .brand {
+  .brand {
     font-size: 1.5rem;
- 
-EOF
-)
+  }
+}
