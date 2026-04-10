@@ -68,8 +68,24 @@ export default function App() {
   );
 
   return (
-
      <main className="app-shell">
+       
+      {/* Navigation Header */}
+      <header className="navbar">
+        <div className="nav-container">
+          <div className="brand">
+            <span className="brand-icon">✈</span>
+            <span className="brand-name">Skylink AirWay</span>
+          </div>
+          <nav className="nav-links">
+            <a href="#destinations">Destinations</a>
+            <a href="#features">Experience</a>
+            <a href="#about">About</a>
+            <button className="nav-btn">Check In</button>
+          </nav>
+        </div>
+      </header>
+
       <section className="hero">
         <div className="stars" aria-hidden="true">
           {stars.map((star) => (
@@ -163,7 +179,16 @@ export default function App() {
             </article>
           ))}
         </div>
-      </section>
-    </main>
-  );
-}
+       </section>
+       
+       <footer className="footer">
+         <div className="footer-content">
+           <div className="footer-brand">
+             <span className="brand-icon">✈</span> Skylink AirWay
+           </div>
+           <p className="copyright">© 2026 Skylink AirWay. All rights reserved.</p>
+         </div>
+       </footer>
+     </main>
+   );
+ }
