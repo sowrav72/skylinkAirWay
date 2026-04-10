@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import Navbar from "./Navbar";
 import "./App.css";
 
 const destinations = [
@@ -69,24 +70,9 @@ export default function App() {
 
   return (
      <main className="app-shell">
-       
-      {/* Navigation Header */}
-      <header className="navbar">
-        <div className="nav-container">
-          <div className="brand">
-            <span className="brand-icon">✈</span>
-            <span className="brand-name">Skylink AirWay</span>
-          </div>
-          <nav className="nav-links">
-            <a href="#destinations">Destinations</a>
-            <a href="#features">Experience</a>
-            <a href="#about">About</a>
-            <button className="nav-btn">Check In</button>
-          </nav>
-        </div>
-      </header>
+       <Navbar />
 
-      <section className="hero">
+       <section className="hero" id="home">
         <div className="stars" aria-hidden="true">
           {stars.map((star) => (
             <span
