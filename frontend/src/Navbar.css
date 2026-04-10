@@ -120,12 +120,21 @@
 @media (max-width: 900px) {
   .navbar {
     padding: 0 1.5rem;
+    height: 60px;
+  }
+
+  .nav-inner {
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-size: 1.2rem;
   }
 
   .nav-links {
     display: none;
     position: absolute;
-    top: 66px;
+    top: 60px;
     left: 0;
     right: 0;
     background: #00308f;
@@ -135,13 +144,54 @@
     gap: 1.2rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     z-index: 99;
+    width: 100%;
   }
 
   .nav-links.open {
     display: flex;
   }
 
+  .nav-links a {
+    width: 100%;
+    display: block;
+  }
+
   .hamburger {
     display: flex;
+  }
+
+  .nav-right {
+    gap: 0.5rem;
+  }
+
+  .nbtn-ghost,
+  .nbtn-solid {
+    padding: 0.35rem 0.8rem;
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar {
+    padding: 0 1rem;
+  }
+
+  .logo {
+    font-size: 1rem;
+  }
+
+  .nav-right {
+    gap: 0.3rem;
+  }
+
+  .nbtn-ghost,
+  .nbtn-solid {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.6rem;
+  }
+
+  .hamburger span {
+    width: 18px;
+    height: 1.5px;
   }
 }
