@@ -1,8 +1,7 @@
-
  :root {
    --color-light-cyan: #e0ffff;
- --color-blue: #00308f;
- --color-light-sky: #e1ebee;
+  --color-blue: #00308f;
+  --color-light-sky: #e1ebee;
   --color-navy: #00308f;
   --color-fb-blue: #1877f2;
   --color-fb-blue-hover: #166fe5;
@@ -28,7 +27,6 @@
    margin: 0;
    font-family: "Inter", "Segoe UI", sans-serif;
    background:
-
     radial-gradient(circle at 20% 10%, rgba(225, 235, 238, 0.24) 0%, transparent 30%),
     radial-gradient(circle at 80% 20%, rgba(24, 119, 242, 0.26) 0%, transparent 35%),
     linear-gradient(180deg, #001a52 0%, #00308f 58%, #001540 100%);
@@ -50,7 +48,6 @@
    position: sticky;
    top: 0;
    z-index: 5;
-
   background: rgba(0, 48, 143, 0.95);
   border-bottom: 1px solid rgba(225, 235, 238, 0.28);
  }
@@ -72,7 +69,8 @@
  }
  
  .brand em {
- color: #c7d7ff;
+
+  color: #c7d7ff;
    font-style: italic;
  }
  
@@ -88,6 +86,7 @@
    text-decoration: none;
    text-transform: uppercase;
    letter-spacing: 0.12em;
+
   color: rgba(225, 235, 238, 0.92);
    font-weight: 600;
    font-size: 0.78rem;
@@ -100,11 +99,16 @@
  
  .ghost-btn,
  .primary-btn {
-   border: 1px solid rgba(225, 235, 238, 0.45);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(225, 235, 238, 0.45);
    border-radius: 10px;
    color: white;
    padding: 0.5rem 0.95rem;
    cursor: pointer;
+  text-decoration: none;
  }
  
  .ghost-btn {
@@ -112,7 +116,7 @@
  }
  
  .primary-btn {
- background: var(--button-solid) !important;
+  background: var(--button-solid) !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -161,7 +165,6 @@
     transform: scale(1.1);
   }
 }
- 
  
  .hero-content,
  .section {
@@ -257,7 +260,6 @@
  .field select {
    width: 100%;
    border-radius: 10px;
-
   border: 1px solid rgba(225, 235, 238, 0.35);
    background: rgba(1, 16, 62, 0.92) !important;
    color: #f7fdff !important;
@@ -366,8 +368,7 @@
  .destination-card,
  .feature-card {
    border-radius: 14px;
-
- border: 1px solid rgba(225, 235, 238, 0.24);
+  border: 1px solid rgba(225, 235, 238, 0.24);
  }
  
  .destination-card {
@@ -378,7 +379,7 @@
  }
  
  .destination-card:hover {
-  border-color: rgba(225, 235, 238, 0.72);
+ border-color: rgba(225, 235, 238, 0.72);
    transform: translateY(-2px);
  }
  
@@ -433,6 +434,82 @@
    background: rgba(224, 255, 255, 0.12);
  }
  
+.account-subtitle {
+  margin: 0.2rem 0 1rem;
+  color: #e1ebee;
+}
+
+.auth-switcher {
+  display: inline-flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.auth-tab {
+  border: 1px solid rgba(225, 235, 238, 0.45);  background: rgba(225, 235, 238, 0.08);
+  color: #e0ffff;
+  border-radius: 10px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+
+.auth-tab.active {
+  background: rgba(24, 119, 242, 0.35);
+  border-color: rgba(225, 235, 238, 0.65);
+}
+
+.auth-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.auth-card {
+  border-radius: 14px;
+  border: 1px solid rgba(225, 235, 238, 0.24);
+  background: rgba(0, 28, 84, 0.62);
+  padding: 1rem;
+}
+
+.auth-card.highlight {
+  border-color: rgba(24, 119, 242, 0.72);
+  box-shadow: 0 0 0 1px rgba(24, 119, 242, 0.2) inset;
+}
+
+.auth-card h3 {
+  margin: 0 0 0.8rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.auth-form label {
+  font-size: 0.82rem;
+  color: #e1ebee;
+}
+
+.auth-form input {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid rgba(225, 235, 238, 0.35);
+  background: rgba(1, 16, 62, 0.92);
+  color: #f7fdff;
+  padding: 0.65rem 0.8rem;
+  font-size: 0.95rem;
+}
+
+.auth-form input:focus {
+  outline: none;
+  border-color: var(--color-blue);
+  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.24);
+}
+
+.auth-form .search-btn {
+  margin-top: 0.35rem;
+}
+
  @media (max-width: 920px) {
    .nav-links {
      display: none;
@@ -444,7 +521,17 @@
  }
  
  @media (max-width: 640px) {
-  .brand {
-    font-size: 1.5rem;
-  }
-}
+   .brand {
+     font-size: 1.65rem;
+   }
+ 
+   .search-grid {
+     grid-template-columns: 1fr;
+   }
+ 
+   .actions,
+   .nav-inner {
+     flex-direction: column;
+     align-items: flex-start;
+   }
+ }

@@ -43,21 +43,24 @@ const features = [
   {
     id: 1,
     title: "Global Reach",
-    description: "Connect to 180+ destinations through our blue corridor network.",
+    description:
+      "Connect to 180+ destinations through our blue corridor network.",
     icon: "🌐",
     iconColor: "#1877f2",
   },
   {
     id: 2,
     title: "Always On Time",
-    description: "Live schedule intelligence helps keep departures predictable.",
+    description:
+      "Live schedule intelligence helps keep departures predictable.",
     icon: "🕒",
     iconColor: "#e0ffff",
   },
   {
     id: 3,
     title: "Travel Protected",
-    description: "Enterprise-grade security and resilient operations every flight.",
+    description:
+      "Enterprise-grade security and resilient operations every flight.",
     icon: "🛡️",
     iconColor: "#e1ebee",
   },
@@ -67,20 +70,16 @@ export default function App() {
   const [health, setHealth] = useState("loading...");
   const [activeTripType, setActiveTripType] = useState(tripTypes[0]);
 
-  // ✅ safer API call
   useEffect(() => {
-    const controller = new AbortController();
-    const apiUrl = process.env.REACT_APP_API_URL ?? "";
+    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
-    fetch(`${apiUrl}/health`, { signal: controller.signal })
+    fetch(`${apiUrl}/health`)
       .then((res) => res.json())
       .then((data) => setHealth(data.status))
       .catch(() => setHealth("offline"));
-
-    return () => controller.abort();
   }, []);
 
-  // ✅ fixed useMemo
+  // ✅ FIXED useMemo
   const stars = useMemo(
     () =>
       Array.from({ length: 36 }, (_, index) => ({
@@ -95,10 +94,12 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {/* NAVBAR */}
+      {/* NAV */}
       <header className="top-nav">
         <div className="nav-inner">
-          <div className="brand">Sky<em>link</em></div>
+          <div className="brand">
+            Sky<em>link</em>
+          </div>
 
           <ul className="nav-links">
             {navItems.map((item) => (
@@ -138,10 +139,10 @@ export default function App() {
             <span className="tagline">Premium Air Travel</span>
             <h1>Explore the world with Skylink</h1>
             <p className="subtitle">
-              Discover seamless journeys, exclusive offers, and world-class service.
+              Discover seamless journeys, exclusive offers, and world-class
+              service.
             </p>
 
-            {/* SEARCH */}
             <div className="search-panel">
               <div className="trip-type-row">
                 {tripTypes.map((type) => (
@@ -159,6 +160,7 @@ export default function App() {
 
               <div className="actions">
                 <button className="search-btn">Search Flights</button>
+
                 <div className="popular-links">
                   <span>Popular:</span>
                   {popularRoutes.map((route) => (

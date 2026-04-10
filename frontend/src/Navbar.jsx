@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./Navbar.css";
 
-const Navbar = () => {
+const Navbar = ({ navItems = [] }) => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -12,16 +12,16 @@ const Navbar = () => {
         </div>
 
         <nav className={`nav-links ${menuOpen ? "open" : ""}`}>
-          <a href="#home" onClick={() => setMenuOpen(false)}>Home</a>
-          <a href="#destinations" onClick={() => setMenuOpen(false)}>Destinations</a>
-          <a href="#features" onClick={() => setMenuOpen(false)}>Experience</a>
-          <a href="#offers" onClick={() => setMenuOpen(false)}>Offers</a>
-          <a href="#about" onClick={() => setMenuOpen(false)}>About</a>
+          {navItems.map((item) => (
+            <a key={item.label} href={item.href} onClick={() => setMenuOpen(false)}>
+              {item.label}
+            </a>
+          ))}
         </nav>
 
         <div className="nav-right">
-          <button className="nbtn-ghost">Sign In</button>
-          <button className="nbtn-solid">Check In</button>
+          <a href="#account" className="nbtn-ghost">Sign In</a>
+          <a href="#account" className="nbtn-solid">Register</a>
           <button
             className="hamburger"
             onClick={() => setMenuOpen(!menuOpen)}
