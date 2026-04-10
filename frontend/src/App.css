@@ -21,7 +21,7 @@
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", system-ui, sans-serif;
-  background: var(--home-bg);
+  background: #e0ffff;
   color: var(--text-primary);
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
@@ -29,6 +29,7 @@ body {
 
 .app-shell {
   min-height: 100vh;
+  background: #e0ffff;
 }
 
 /* Navigation Bar */
