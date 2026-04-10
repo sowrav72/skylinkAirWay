@@ -11,6 +11,7 @@ const navItems = [
 
 const tripTypes = ["One Way", "Round Trip", "Multi-City"];
 const popularRoutes = ["JFK → LHR", "SFO → NRT", "MIA → MAD", "DXB → SYD"];
+
 const offers = [
   "Flight Deals",
   "Holiday Packages",
@@ -24,38 +25,41 @@ const destinations = [
   {
     city: "Maldives",
     blurb: "Crystal lagoons and private villa arrivals.",
-    gradient: "linear-gradient(160deg, #2d9cdb 0%, #1550af 45%, #012169 100%)",
+    gradient: "linear-gradient(160deg, #e0ffff 0%, #4f9fff 45%, #00308f 100%)",
   },
   {
     city: "Zurich",
     blurb: "Alpine elegance with seamless rail-air connections.",
-    gradient: "linear-gradient(160deg, #73c2fb 0%, #2f80ed 40%, #1b2a72 100%)",
+    gradient: "linear-gradient(160deg, #e1ebee 0%, #6ea8ff 40%, #1b3787 100%)",
   },
   {
     city: "Seoul",
     blurb: "Smart city culture and premium lounge experiences.",
-    gradient: "linear-gradient(160deg, #4a8dd8 0%, #1f75fe 50%, #012169 100%)",
+    gradient: "linear-gradient(160deg, #98c8ff 0%, #1877f2 50%, #00308f 100%)",
   },
 ];
 
 const features = [
   {
+    id: 1,
     title: "Global Reach",
     description: "Connect to 180+ destinations through our blue corridor network.",
     icon: "🌐",
-    iconColor: "#1f75fe",
+    iconColor: "#1877f2",
   },
   {
+    id: 2,
     title: "Always On Time",
     description: "Live schedule intelligence helps keep departures predictable.",
     icon: "🕒",
-    iconColor: "#73c2fb",
+    iconColor: "#e0ffff",
   },
   {
+    id: 3,
     title: "Travel Protected",
     description: "Enterprise-grade security and resilient operations every flight.",
     icon: "🛡️",
-    iconColor: "#73c2fb",
+    iconColor: "#e1ebee",
   },
 ];
 
@@ -63,14 +67,20 @@ export default function App() {
   const [health, setHealth] = useState("loading...");
   const [activeTripType, setActiveTripType] = useState(tripTypes[0]);
 
+  // ✅ safer API call
   useEffect(() => {
-    const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
+    const controller = new AbortController();
+    const apiUrl = process.env.REACT_APP_API_URL ?? "";
 
-    fetch(`${apiUrl}/health`)
+    fetch(`${apiUrl}/health`, { signal: controller.signal })
       .then((res) => res.json())
       .then((data) => setHealth(data.status))
       .catch(() => setHealth("offline"));
+
+    return () => controller.abort();
   }, []);
+
+  // ✅ fixed useMemo
   const stars = useMemo(
     () =>
       Array.from({ length: 36 }, (_, index) => ({
@@ -84,129 +94,147 @@ export default function App() {
   );
 
   return (
-<main className="app-shell" id="home">
+    <div className="app-shell">
+      {/* NAVBAR */}
       <header className="top-nav">
         <div className="nav-inner">
-          <div className="brand">Skylink <em>AirWay</em></div>
-          <nav>
-            <ul className="nav-links">
-              {navItems.map((item) => (
-                <li key={item.label}>
-                  <a href={item.href}>{item.label}</a>
-                </li>
-              ))}
-            </ul>
-          </nav>
+          <div className="brand">Sky<em>link</em></div>
+
+          <ul className="nav-links">
+            {navItems.map((item) => (
+              <li key={item.label}>
+                <a href={item.href}>{item.label}</a>
+              </li>
+            ))}
+          </ul>
+
           <div className="nav-actions">
-            <button type="button" className="ghost-btn">Sign In</button>
-            <button type="button" className="primary-btn">Check In</button>
+            <button className="ghost-btn">Login</button>
+            <button className="primary-btn">Sign Up</button>
           </div>
         </div>
       </header>
 
-      <section className="hero">
-        <div className="stars" aria-hidden="true">
-          {stars.map((star) => (
-            <span
-              key={star.id}
-              className="star"
-              style={{ top: star.top, left: star.left, width: star.size, height: star.size, animationDelay: star.delay }}
-            />
-          ))}
-        </div>
+      <main>
+        {/* HERO */}
+        <section className="hero" id="home">
+          <div className="stars">
+            {stars.map((star) => (
+              <div
+                key={star.id}
+                className="star"
+                style={{
+                  top: star.top,
+                  left: star.left,
+                  width: star.size,
+                  height: star.size,
+                  animationDelay: star.delay,
+                }}
+              />
+            ))}
+          </div>
 
-        <div className="hero-content">
-          <span className="tagline">Global Blue Airlines</span>
-          <h1>Where Every Journey<br />Meets the Horizon</h1>
-          <p className="subtitle">
-            Discover modern luxury with seamless booking, refined cabins, and destinations that bring the world closer.
-          </p>
+          <div className="hero-content">
+            <span className="tagline">Premium Air Travel</span>
+            <h1>Explore the world with Skylink</h1>
+            <p className="subtitle">
+              Discover seamless journeys, exclusive offers, and world-class service.
+            </p>
 
-          <div className="search-panel">
-            <div className="trip-type-row">
-              {tripTypes.map((tripType) => (
-                <button
-                  key={tripType}
-                  type="button"
-                  className={`trip-type ${activeTripType === tripType ? "active" : ""}`}
-                  onClick={() => setActiveTripType(tripType)}
-                >
-                  {tripType}
-                </button>
-              ))}
-            </div>
-
-            <div className="search-grid">
-              <div className="field"><label htmlFor="from">From</label><input id="from" type="text" placeholder="City or Airport" /></div>
-              <div className="field"><label htmlFor="to">To</label><input id="to" type="text" placeholder="City or Airport" /></div>
-              <div className="field"><label htmlFor="depart">Depart</label><input id="depart" type="date" /></div>
-              <div className="field">
-                <label htmlFor="cabin">Cabin</label>
-                <select id="cabin" defaultValue="Economy">
-                  <option>Economy</option><option>Premium Economy</option><option>Business</option><option>First</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="actions">
-              <button className="search-btn" type="button">Search</button>
-              <div className="popular-links">
-                <span>Popular:</span>
-                {popularRoutes.map((route) => (
-                  <button key={route} className="pill" type="button">{route}</button>
+            {/* SEARCH */}
+            <div className="search-panel">
+              <div className="trip-type-row">
+                {tripTypes.map((type) => (
+                  <button
+                    key={type}
+                    className={`trip-type ${
+                      activeTripType === type ? "active" : ""
+                    }`}
+                    onClick={() => setActiveTripType(type)}
+                  >
+                    {type}
+                  </button>
                 ))}
               </div>
-            </div>
-            <p className="health">System: {health}</p>
-          </div>
-        </div>
-      </section>
 
-      <section className="section" id="offers">
-        <h2>Offers</h2>
-        <ul className="offer-grid">
-          {offers.map((offer) => (
-            <li key={offer} className="offer-item">{offer}</li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="section" id="destinations">
-        <h2>Destinations</h2>
-        <div className="destination-grid">
-          {destinations.map((destination) => (
-            <article className="destination-card" key={destination.city}>
-              <div className="destination-image" style={{ background: destination.gradient }} />
-              <div className="destination-overlay" />
-              <div className="destination-content">
-                <h3>{destination.city}</h3>
-                <p>{destination.blurb}</p>
+              <div className="actions">
+                <button className="search-btn">Search Flights</button>
+                <div className="popular-links">
+                  <span>Popular:</span>
+                  {popularRoutes.map((route) => (
+                    <span key={route} className="pill">
+                      {route}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </article>
-          ))}
-        </div>
-      </section>
 
-      <section className="section features" id="experience">
-        <h2>Experience</h2>
-        <div className="features-grid">
-          {features.map((feature) => (
-            <article className="feature-card" key={feature.title}>
-              <div className="feature-icon" style={{ color: feature.iconColor }}>{feature.icon}</div>
-              <h3>{feature.title}</h3>
-              <p>{feature.description}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+              <p className="health">API Status: {health}</p>
+            </div>
+          </div>
+        </section>
 
-      <section className="section about" id="about">
-        <h2>About Skylink</h2>
-        <p>
-          We blend precision aviation operations with refined hospitality, creating blue-sky journeys designed around comfort,
-          reliability, and global access.
-        </p>
-      </section>
-    </main>
+        {/* DESTINATIONS */}
+        <section className="section" id="destinations">
+          <h2>Destinations</h2>
+          <div className="destination-grid">
+            {destinations.map((dest) => (
+              <div
+                key={dest.city}
+                className="destination-card"
+                style={{ background: dest.gradient }}
+              >
+                <div className="destination-overlay"></div>
+                <div className="destination-content">
+                  <h3>{dest.city}</h3>
+                  <p>{dest.blurb}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* OFFERS */}
+        <section className="section" id="offers">
+          <h2>Offers</h2>
+          <ul className="offer-grid">
+            {offers.map((offer) => (
+              <li key={offer} className="offer-item">
+                {offer}
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* FEATURES */}
+        <section className="section features" id="experience">
+          <h2>Experience</h2>
+          <div className="features-grid">
+            {features.map((feature) => (
+              <article className="feature-card" key={feature.id}>
+                <div
+                  className="feature-icon"
+                  style={{ color: feature.iconColor }}
+                >
+                  {feature.icon}
+                </div>
+                <h3>{feature.title}</h3>
+                <p>{feature.description}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* ABOUT */}
+        <section className="section about" id="about">
+          <h2>About Skylink</h2>
+          <p>
+            We blend precision aviation operations with refined hospitality,
+            creating blue-sky journeys designed around comfort, reliability,
+            and global access.
+          </p>
+        </section>
+      </main>
+    </div>
   );
 }
