@@ -6,8 +6,7 @@ const Navbar = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  
-  // Check if user is logged in (replace with actual auth logic)
+
   const isLoggedIn = localStorage.getItem("authToken") ? true : false;
 
   const handleLogout = () => {
@@ -20,32 +19,32 @@ const Navbar = () => {
     <header className="navbar">
       <div className="nav-inner">
         {/* LOGO */}
-        <div className="logo">
-          <Link to="/" style={{ textDecoration: "none", color: "inherit" }}>
-            Skylink <em>AirWay</em>
-          </Link>
-        </div>
+        <Link to="/" className="logo">
+          Skylink <em>AirWay</em>
+        </Link>
 
         {/* CENTER NAV */}
         <nav className={`nav-center ${menuOpen ? "open" : ""}`}>
           <Link to="/#home" onClick={() => setMenuOpen(false)}>Home</Link>
           <Link to="/#destinations" onClick={() => setMenuOpen(false)}>Destinations</Link>
           <Link to="/#offers" onClick={() => setMenuOpen(false)}>Offers</Link>
-          <Link to="/#experience" onClick={() => setMenuOpen(false)}>About</Link>
+          <Link to="/#experience" onClick={() => setMenuOpen(false)}>Experience</Link>
+          <Link to="/#about" onClick={() => setMenuOpen(false)}>About</Link>
         </nav>
 
         {/* RIGHT ACTIONS */}
         <div className="nav-right">
           {/* QUICK SEARCH */}
-          <button className="nav-icon-btn" title="Search Bookings">
-            🔍
-          </button>
+          <button className="nav-icon-btn" title="Search Bookings">🔍</button>
 
           {/* NOTIFICATIONS */}
           <div className="nav-dropdown">
-            <button 
-              className="nav-icon-btn notification-btn" 
-              onClick={() => setNotificationsOpen(!notificationsOpen)}
+            <button
+              className="nav-icon-btn"
+              onClick={() => {
+                setNotificationsOpen(!notificationsOpen);
+                setProfileOpen(false);
+              }}
               title="Notifications"
             >
               🔔
@@ -60,17 +59,18 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* HELP/SUPPORT */}
-          <button className="nav-icon-btn" title="Help & Support">
-            ❓
-          </button>
+          {/* HELP */}
+          <button className="nav-icon-btn" title="Help & Support">❓</button>
 
-          {/* AUTHENTICATED USER */}
+          {/* AUTH */}
           {isLoggedIn ? (
             <div className="nav-dropdown">
-              <button 
-                className="nav-icon-btn profile-btn"
-                onClick={() => setProfileOpen(!profileOpen)}
+              <button
+                className="nav-icon-btn"
+                onClick={() => {
+                  setProfileOpen(!profileOpen);
+                  setNotificationsOpen(false);
+                }}
                 title="Profile"
               >
                 👤

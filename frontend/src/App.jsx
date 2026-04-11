@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import "./App.css";
 import Navbar from "./Navbar";
@@ -8,7 +8,7 @@ import Register from "./Register";
 const tripTypes = ["One Way", "Round Trip", "Multi-City"];
 const popularRoutes = ["JFK → LHR", "SFO → NRT", "MIA → MAD", "DXB → SYD"];
 
-const offers = [
+const dealCategories = [
   "Flight Deals",
   "Holiday Packages",
   "Business Class Offers",
@@ -19,199 +19,287 @@ const offers = [
 
 const destinations = [
   {
-    city: "Maldives",
-    blurb: "Crystal lagoons and private villa arrivals.",
-    gradient: "linear-gradient(160deg, #e0ffff 0%, #4f9fff 45%, #00308f 100%)",
+    city: "Santorini",
+    country: "Greece",
+    region: "Europe",
+    blurb: "Sunset cliff escapes with premium sky lounge access.",
+    image: "url('https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=1200&q=80')",
   },
   {
-    city: "Zurich",
-    blurb: "Alpine elegance with seamless rail-air connections.",
-    gradient: "linear-gradient(160deg, #e1ebee 0%, #6ea8ff 40%, #1b3787 100%)",
+    city: "Tokyo",
+    country: "Japan",
+    region: "Asia",
+    blurb: "Midnight city lights and seamless global connections.",
+    image: "url('https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=1200&q=80')",
   },
   {
-    city: "Seoul",
-    blurb: "Smart city culture and premium lounge experiences.",
-    gradient: "linear-gradient(160deg, #98c8ff 0%, #1877f2 50%, #00308f 100%)",
+    city: "Reykjavík",
+    country: "Iceland",
+    region: "Nordic",
+    blurb: "Arctic adventures guided by precision flight planning.",
+    image: "url('https://images.unsplash.com/photo-1539650116574-8efeb43e2750?auto=format&fit=crop&w=1200&q=80')",
+  },
+];
+
+const offers = [
+  {
+    route: "JFK → NRT",
+    title: "Tokyo Business Escape",
+    price: "$1,240",
+    badge: "Limited Time",
+    image: "url('https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80')",
+  },
+  {
+    route: "LHR → DXB",
+    title: "Dubai Luxury Getaway",
+    price: "$890",
+    badge: "Sale",
+    image: "url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80')",
+  },
+  {
+    route: "SFO → CDG",
+    title: "Paris Summer Special",
+    price: "$740",
+    badge: "Best Value",
+    image: "url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=800&q=80')",
   },
 ];
 
 const features = [
   {
-    id: 1,
-    title: "Global Reach",
-    description:
-      "Connect to 180+ destinations through our blue corridor network.",
     icon: "🌐",
-    iconColor: "#1877f2",
+    num: "01",
+    title: "Global Reach",
+    desc: "Connect to 180+ destinations through our blue corridor network with curated stopovers.",
   },
   {
-    id: 2,
-    title: "Always On Time",
-    description:
-      "Live schedule intelligence helps keep departures predictable.",
     icon: "🕒",
-    iconColor: "#e0ffff",
+    num: "02",
+    title: "Always On Time",
+    desc: "Live schedule intelligence and real-time gate updates keep your departure predictable.",
   },
   {
-    id: 3,
-    title: "Travel Protected",
-    description:
-      "Enterprise-grade security and resilient operations every flight.",
     icon: "🛡️",
-    iconColor: "#e1ebee",
+    num: "03",
+    title: "Travel Protected",
+    desc: "Enterprise-grade security and resilient operations ensure every flight is safe.",
   },
 ];
 
-// Home page component
 function Home() {
   const [health, setHealth] = useState("loading...");
-  const [activeTripType, setActiveTripType] = useState(tripTypes[0]);
+  const [tripType, setTripType] = useState("One Way");
+  const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     const apiUrl = process.env.REACT_APP_API_URL || "http://localhost:8000";
-
     fetch(`${apiUrl}/health`)
       .then((res) => res.json())
       .then((data) => setHealth(data.status))
       .catch(() => setHealth("offline"));
   }, []);
 
-  // ✅ FIXED useMemo
-  const stars = useMemo(
-    () =>
-      Array.from({ length: 36 }, (_, index) => ({
-        id: index,
-        top: `${(index * 11) % 100}%`,
-        left: `${(index * 19) % 100}%`,
-        size: `${(index % 3) + 2}px`,
-        delay: `${(index % 8) * 0.5}s`,
-      })),
-    []
-  );
-
   return (
     <main>
-        {/* HERO */}
-        <section className="hero" id="home">
-          <div className="stars">
-            {stars.map((star) => (
-              <div
-                key={star.id}
-                className="star"
-                style={{
-                  top: star.top,
-                  left: star.left,
-                  width: star.size,
-                  height: star.size,
-                  animationDelay: star.delay,
-                }}
-              />
+      {/* ── HERO ── */}
+      <section className="hero" id="home">
+        <div className="hero-bg" />
+        <div className="hero-dim" />
+
+        <div className="hero-content">
+          <p className="hero-eyebrow">Premium Air Travel</p>
+          <h1>
+            Explore the World<br />
+            with <em>Skylink</em>
+          </h1>
+          <p className="hero-sub">
+            Discover seamless journeys, exclusive offers, and world-class
+            service crafted for the discerning traveller.
+          </p>
+        </div>
+
+        {/* SEARCH BAR */}
+        <div className="search-bar">
+          <div className="tab-row">
+            {tripTypes.map((t) => (
+              <button
+                key={t}
+                className={`stab${tripType === t ? " on" : ""}`}
+                onClick={() => setTripType(t)}
+              >
+                {t}
+              </button>
             ))}
           </div>
 
-          <div className="hero-content">
-            <span className="tagline">Premium Air Travel</span>
-            <h1>Explore the world with Skylink</h1>
-            <p className="subtitle">
-              Discover seamless journeys, exclusive offers, and world-class
-              service.
-            </p>
+          <div className="fields-row">
+            <div className="sf">
+              <label>From</label>
+              <input placeholder="City or Airport" />
+            </div>
+            <div className="sf">
+              <label>To</label>
+              <input placeholder="City or Airport" />
+            </div>
+            <div className="sf">
+              <label>Depart</label>
+              <input type="date" />
+            </div>
+            <div className="sf">
+              <label>Cabin</label>
+              <select>
+                <option>Economy</option>
+                <option>Premium Economy</option>
+                <option>Business</option>
+                <option>First Class</option>
+              </select>
+            </div>
+            <button className="sbtn">Search</button>
+          </div>
 
-            <div className="search-panel">
-              <div className="trip-type-row">
-                {tripTypes.map((type) => (
-                  <button
-                    key={type}
-                    className={`trip-type ${
-                      activeTripType === type ? "active" : ""
-                    }`}
-                    onClick={() => setActiveTripType(type)}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-
-              <div className="actions">
-                <button className="search-btn">Search Flights</button>
-
-                <div className="popular-links">
-                  <span>Popular:</span>
-                  {popularRoutes.map((route) => (
-                    <span key={route} className="pill">
-                      {route}
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              <p className="health">API Status: {health}</p>
+          <div className="popular-row">
+            <span className="pop-lbl">Popular:</span>
+            {popularRoutes.map((r) => (
+              <button key={r} className="spill">{r}</button>
+            ))}
+            <div className="status-pill">
+              <span className="sdot" />
+              System: {health}
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* DESTINATIONS */}
-        <section className="section" id="destinations">
-          <h2>Destinations</h2>
-          <div className="destination-grid">
-            {destinations.map((dest) => (
-              <div
-                key={dest.city}
-                className="destination-card"
-                style={{ background: dest.gradient }}
-              >
-                <div className="destination-overlay"></div>
-                <div className="destination-content">
-                  <h3>{dest.city}</h3>
-                  <p>{dest.blurb}</p>
-                </div>
-              </div>
-            ))}
+      {/* ── DEALS STRIP ── */}
+      <div className="deals-strip">
+        <div className="deals-inner">
+          {dealCategories.map((d, i) => (
+            <div
+              key={d}
+              className={`deal-badge${activeTab === i ? " active" : ""}`}
+              onClick={() => setActiveTab(i)}
+            >
+              <span className="deal-dot" />
+              {d}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── DESTINATIONS ── */}
+      <div className="section" id="destinations">
+        <div className="sec-row">
+          <div>
+            <p className="sec-eyebrow">Explore the World</p>
+            <h2 className="sec-title">
+              Popular <em>Destinations</em>
+            </h2>
           </div>
-        </section>
+          <span className="sec-link">View All →</span>
+        </div>
 
-        {/* OFFERS */}
-        <section className="section" id="offers">
-          <h2>Offers</h2>
-          <ul className="offer-grid">
-            {offers.map((offer) => (
-              <li key={offer} className="offer-item">
-                {offer}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <div className="dest-grid">
+          {destinations.map((d) => (
+            <article className="dest-card" key={d.city}>
+              <div className="bg" style={{ backgroundImage: d.image }} />
+              <div className="glass-layer" />
+              <div className="dest-tag">{d.region}</div>
+              <div className="dest-info">
+                <p className="dest-region">{d.country}</p>
+                <h3 className="dest-city">{d.city}</h3>
+                <p className="dest-blurb">{d.blurb}</p>
+                <button className="dest-btn">Explore →</button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
 
-        {/* FEATURES */}
-        <section className="section features" id="experience">
-          <h2>Experience</h2>
-          <div className="features-grid">
-            {features.map((feature) => (
-              <article className="feature-card" key={feature.id}>
-                <div
-                  className="feature-icon"
-                  style={{ color: feature.iconColor }}
-                >
-                  {feature.icon}
+      {/* ── SPECIAL OFFERS ── */}
+      <section className="offers-section" id="offers">
+        <div className="offers-inner">
+          <div className="sec-row">
+            <div>
+              <p className="sec-eyebrow">Exclusive Deals</p>
+              <h2 className="sec-title">
+                Special <em>Offers</em>
+              </h2>
+            </div>
+            <span className="sec-link">All Offers →</span>
+          </div>
+
+          <div className="off-grid">
+            {offers.map((o) => (
+              <article className="off-card" key={o.title}>
+                <div className="off-img" style={{ backgroundImage: o.image }}>
+                  <span className="off-badge">{o.badge}</span>
                 </div>
-                <h3>{feature.title}</h3>
-                <p>{feature.description}</p>
+                <div className="off-body">
+                  <p className="off-route">{o.route}</p>
+                  <h3 className="off-title">{o.title}</h3>
+                  <p className="off-price">
+                    From <strong>{o.price}</strong> return
+                  </p>
+                </div>
               </article>
             ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ABOUT */}
-        <section className="section about" id="about">
-          <h2>About Skylink</h2>
+      {/* ── FEATURES ── */}
+      <section className="feat-section" id="experience">
+        <div className="feat-inner">
+          <p className="feat-eyebrow">What Sets Us Apart</p>
+          <h2 className="feat-title">
+            Why Travelers Choose <em>Blue</em>
+          </h2>
+          <p className="feat-sub">
+            World-class service, unmatched reliability, and experiences crafted
+            for every kind of traveller.
+          </p>
+
+          <div className="feat-grid">
+            {features.map((f) => (
+              <article className="feat-card" key={f.title}>
+                <span className="feat-icon">{f.icon}</span>
+                <p className="feat-num">{f.num}</p>
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── ABOUT ── */}
+      <section className="about-section" id="about">
+        <div className="sec-row">
+          <div>
+            <p className="sec-eyebrow">Our Story</p>
+            <h2 className="sec-title">About <em>Skylink</em></h2>
+          </div>
+        </div>
+        <div className="about-card">
           <p>
             We blend precision aviation operations with refined hospitality,
             creating blue-sky journeys designed around comfort, reliability,
-            and global access.
+            and global access. From the moment you book to the moment you land,
+            every detail of your Skylink experience is crafted to exceed
+            expectations.
           </p>
-        </section>
-      </main>
-    );
+        </div>
+      </section>
+
+      {/* ── FOOTER ── */}
+      <footer className="footer">
+        <div className="foot-logo">
+          Skylink <em>AirWay</em>
+        </div>
+        <p className="foot-copy">© 2026 Skylink AirWay. All rights reserved.</p>
+      </footer>
+    </main>
+  );
 }
 
 export default function App() {
