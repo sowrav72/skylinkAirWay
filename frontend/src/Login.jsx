@@ -1,82 +1,56 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import "./Auth.css";
+
+const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 export default function Login() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    remember: false,
-  });
-
+  const navigate = useNavigate();
+  const [role, setRole] = useState("user");
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
 
-  // handle input change
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  // basic validation
   const validate = () => {
-    const newErrors = {};
-
-    if (!formData.email) {
-      newErrors.email = "Email is required";
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = "Invalid email format";
-    }
-
-    if (!formData.password) {
-      newErrors.password = "Password is required";
-    } else if (formData.password.length < 6) {
-      newErrors.password = "Minimum 6 characters required";
-    }
-
-    return newErrors;
+    const e = {};
+    if (!formData.email) e.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) e.email = "Invalid email";
+    if (!formData.password) e.password = "Password is required";
+    else if (formData.password.length < 6) e.password = "Min 6 characters";
+    return e;
   };
 
-  // handle submit
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (ev) => {
+    ev.preventDefault();
     setServerError("");
+    const errs = validate();
+    if (Object.keys(errs).length) { setErrors(errs); return; }
 
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    setErrors({});
     setLoading(true);
-
     try {
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL || ""}/login`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...formData, role }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Login failed");
 
-      const data = await response.json();
+      // Store session
+      localStorage.setItem("authToken", data.access_token);
+      localStorage.setItem("userRole", data.role);
+      localStorage.setItem("userName", data.full_name);
+      localStorage.setItem("userId", data.user_id);
 
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-
-      // success (store token, redirect, etc.)
-      console.log("Login success:", data);
-
+      navigate(data.role === "staff" ? "/profile/staff" : "/profile/user");
     } catch (err) {
-      setServerError(err.message || "Something went wrong");
+      setServerError(err.message);
     } finally {
       setLoading(false);
     }
@@ -85,64 +59,88 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="glass-container">
-        <h2>Welcome Back</h2>
-        <p className="auth-subtitle">Sign in to continue your journey ✈️</p>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-        {/* EMAIL */}
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          placeholder="you@example.com"
-          value={formData.email}
-          onChange={handleChange}
-        />
-        {errors.email && <span className="error">{errors.email}</span>}
-
-        {/* PASSWORD */}
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          placeholder="••••••••"
-          value={formData.password}
-          onChange={handleChange}
-        />
-        {errors.password && <span className="error">{errors.password}</span>}
-
-        {/* OPTIONS */}
-        <div className="auth-options">
-          <label className="remember">
-            <input
-              type="checkbox"
-              name="remember"
-              checked={formData.remember}
-              onChange={handleChange}
-            />
-            Remember me
-          </label>
-
-          <a href="#" className="forgot-link">
-            Forgot password?
-          </a>
+        {/* LOGO */}
+        <div className="auth-logo">
+          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <path d="M4 20L16 4L28 20L22 18L16 28L10 18L4 20Z" fill="#1877f2" opacity="0.9"/>
+          </svg>
+          <span>Skylink AirWay</span>
         </div>
 
-        {/* ERROR */}
-        {serverError && <div className="server-error">{serverError}</div>}
+        <h2>Welcome Back</h2>
+        <p className="auth-subtitle">Sign in to continue your journey</p>
 
-        {/* BUTTON */}
-        <button type="submit" className="primary-btn" disabled={loading}>
-          {loading ? "Signing in..." : "Sign In"}
-        </button>
-      </form>
+        {/* ROLE TOGGLE */}
+        <div className="role-toggle">
+          <button
+            type="button"
+            className={`rtab${role === "user" ? " active" : ""}`}
+            onClick={() => setRole("user")}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Passenger
+          </button>
+          <button
+            type="button"
+            className={`rtab${role === "staff" ? " active" : ""}`}
+            onClick={() => setRole("staff")}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+            Staff
+          </button>
+        </div>
 
-      {/* FOOTER */}
-      <p className="auth-footer">
-        Don't have an account? <Link to="/register">Sign up</Link>
-      </p>
+        <form className="auth-form" onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label>Email Address</label>
+            <input
+              name="email" type="email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={handleChange}
+              className={errors.email ? "err" : ""}
+            />
+            {errors.email && <span className="error">{errors.email}</span>}
+          </div>
+
+          <div className="form-group">
+            <label>Password</label>
+            <input
+              name="password" type="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={handleChange}
+              className={errors.password ? "err" : ""}
+            />
+            {errors.password && <span className="error">{errors.password}</span>}
+          </div>
+
+          <div className="form-row">
+            <span />
+            <Link to="/forgot-password" className="forgot-link">Forgot password?</Link>
+          </div>
+
+          {serverError && <div className="server-error">{serverError}</div>}
+
+          <button type="submit" className="auth-btn" disabled={loading}>
+            {loading ? (
+              <span className="spinner" />
+            ) : (
+              `Sign In as ${role === "staff" ? "Staff" : "Passenger"}`
+            )}
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          Don't have an account? <Link to="/register">Create account</Link>
+        </p>
       </div>
     </div>
   );
