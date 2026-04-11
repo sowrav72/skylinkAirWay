@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, text
+from sqlalchemy.pool import NullPool
 
 app = FastAPI(title="SkyLink AirWay API", version="1.0.0")
 
@@ -19,7 +20,7 @@ app.add_middleware(
 )
 
 # ==============================
-# Database Configuration
+# Database Configuration (Supabase Pooler Compatible)
 # ==============================
 DATABASE_URL = os.getenv("DATABASE_URL", "")
 
@@ -30,15 +31,18 @@ if DATABASE_URL and DATABASE_URL.strip():
         if DATABASE_URL.startswith("postgres://"):
             DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-        # Create engine (optimized for Supabase pooler)
+        # Create engine (pgBouncer / Supabase pooler safe)
         engine = create_engine(
             DATABASE_URL,
-            pool_pre_ping=True,
-            pool_recycle=300,
+            poolclass=NullPool,  # 🔥 Important for pooler
+            connect_args={
+                "sslmode": "require",
+                "options": "-c statement_timeout=30000"
+            },
             echo=False
         )
 
-        print("✅ Database connected successfully")
+        print("✅ Database connected successfully (pooler mode)")
 
     except Exception as e:
         print("❌ Database connection error:", e)
