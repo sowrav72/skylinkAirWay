@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import "./Auth.css";
 
@@ -10,11 +10,40 @@ export function ForgotPassword() {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [cooldown, setCooldown] = useState(0);
+  const cooldownRef = useRef(null);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
+
+  const startCooldown = () => {
+    setCooldown(60);
+    cooldownRef.current = setInterval(() => {
+      setCooldown((prev) => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!email) { setError("Email is required"); return; }
+    
+    // Check cooldown
+    if (cooldown > 0) {
+      setError(`Please wait ${cooldown} seconds before trying again`);
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch(`${API}/auth/forgot-password`, {
@@ -25,6 +54,7 @@ export function ForgotPassword() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Failed");
       setSent(true);
+      startCooldown();
     } catch (err) {
       setError(err.message);
     } finally {
@@ -49,6 +79,11 @@ export function ForgotPassword() {
             </svg>
             <h2>Check Your Email</h2>
             <p>We sent a password reset link to <strong>{email}</strong></p>
+            {cooldown > 0 && (
+              <p style={{ fontSize: "0.85rem", color: "#888" }}>
+                You can request another link in {cooldown} seconds
+              </p>
+            )}
             <Link to="/login" className="auth-btn" style={{display:"block",textAlign:"center",marginTop:"1rem"}}>
               Back to Sign In
             </Link>
@@ -67,8 +102,13 @@ export function ForgotPassword() {
                 />
               </div>
               {error && <div className="server-error">{error}</div>}
-              <button type="submit" className="auth-btn" disabled={loading}>
-                {loading ? <span className="spinner" /> : "Send Reset Link"}
+              <button type="submit" className="auth-btn" disabled={loading || cooldown > 0}>
+                {loading 
+                  ? <span className="spinner" /> 
+                  : cooldown > 0 
+                    ? `Wait ${cooldown}s` 
+                    : "Send Reset Link"
+                }
               </button>
             </form>
 

@@ -1,3 +1,4 @@
+import time
 from fastapi import APIRouter, HTTPException
 from app.schemas import (
     UserRegisterSchema,
@@ -10,22 +11,36 @@ from app.database import supabase, supabase_admin
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
+# Simple in-memory cooldowns (moderate security for class project)
+EMAIL_COOLDOWN_SECONDS = 60
+_email_action_timestamps = {}
+
+
+def _enforce_email_cooldown(action: str, email: str):
+    key = f"{action}:{email.strip().lower()}"
+    now = time.time()
+    last = _email_action_timestamps.get(key, 0)
+    wait_left = int(EMAIL_COOLDOWN_SECONDS - (now - last))
+    if wait_left > 0:
+        raise HTTPException(429, f"Please wait {wait_left} seconds before trying again")
+    _email_action_timestamps[key] = now
+
 
 # ── USER REGISTER ──────────────────────────
 @router.post("/register/user")
 async def register_user(body: UserRegisterSchema):
-    if not supabase:
-        raise HTTPException(503, "Supabase not configured")
+    if not supabase_admin:
+        raise HTTPException(503, "Supabase admin not configured")
     try:
-        res = supabase.auth.sign_up({
+        # Admin create_user avoids Supabase signup confirmation email
+        res = supabase_admin.auth.admin.create_user({
             "email": body.email,
             "password": body.password,
-            "options": {
-                "data": {"role": "user", "full_name": body.full_name}
-            },
+            "email_confirm": True,
+            "user_metadata": {"role": "user", "full_name": body.full_name},
         })
         if res.user is None:
-            raise HTTPException(400, "Registration failed — check your email")
+            raise HTTPException(400, "Registration failed")
 
         # Insert into profiles table
         supabase.table("profiles").insert({
@@ -34,7 +49,7 @@ async def register_user(body: UserRegisterSchema):
             "role": "user",
         }).execute()
 
-        return {"message": "User registered. Please verify your email.", "user_id": res.user.id}
+        return {"message": "User registered successfully.", "user_id": res.user.id}
 
     except Exception as e:
         raise HTTPException(400, str(e))
@@ -43,8 +58,8 @@ async def register_user(body: UserRegisterSchema):
 # ── STAFF REGISTER ─────────────────────────
 @router.post("/register/staff")
 async def register_staff(body: StaffRegisterSchema):
-    if not supabase:
-        raise HTTPException(503, "Supabase not configured")
+    if not supabase_admin:
+        raise HTTPException(503, "Supabase admin not configured")
 
     # Validate staff_id exists and is unused
     code_check = (
@@ -58,15 +73,15 @@ async def register_staff(body: StaffRegisterSchema):
         raise HTTPException(400, "Invalid or already used Staff ID")
 
     try:
-        res = supabase.auth.sign_up({
+        # Admin create_user avoids Supabase signup confirmation email
+        res = supabase_admin.auth.admin.create_user({
             "email": body.email,
             "password": body.password,
-            "options": {
-                "data": {
-                    "role": "staff",
-                    "full_name": body.full_name,
-                    "staff_id": body.staff_id,
-                }
+            "email_confirm": True,
+            "user_metadata": {
+                "role": "staff",
+                "full_name": body.full_name,
+                "staff_id": body.staff_id,
             },
         })
         if res.user is None:
@@ -92,7 +107,7 @@ async def register_staff(body: StaffRegisterSchema):
         # Mark staff code as used
         supabase.table("valid_staff_codes").update({"used": True}).eq("code", body.staff_id).execute()
 
-        return {"message": "Staff account created. Please verify your email.", "user_id": res.user.id}
+        return {"message": "Staff account created successfully.", "user_id": res.user.id}
 
     except Exception as e:
         raise HTTPException(400, str(e))
@@ -137,11 +152,14 @@ async def forgot_password(body: ForgotPasswordSchema):
     if not supabase:
         raise HTTPException(503, "Supabase not configured")
     try:
+        _enforce_email_cooldown("forgot_password", body.email)
         supabase.auth.reset_password_email(
             body.email,
             options={"redirect_to": "http://localhost:3000/reset-password"},
         )
         return {"message": "If this email exists, a reset link has been sent."}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(400, str(e))
 
