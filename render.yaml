@@ -20,4 +20,4 @@ services:
     pullRequestPreviewsEnabled: true
     envVars:
       - key: REACT_APP_API_URL
-        value: https://skylinkairway-backend.onrender.com
+        value: https://skylinkairway.onrender.com
