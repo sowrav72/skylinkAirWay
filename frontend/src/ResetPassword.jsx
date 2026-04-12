@@ -7,6 +7,7 @@ const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 // ── FORGOT PASSWORD PAGE ───────────────────
 export function ForgotPassword() {
   const [email, setEmail] = useState("");
+  const [resetLink, setResetLink] = useState("");
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
@@ -53,6 +54,9 @@ export function ForgotPassword() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail || "Failed");
+      if (data.reset_token) {
+        setResetLink(`${window.location.origin}/reset-password?token=${encodeURIComponent(data.reset_token)}`);
+      }
       setSent(true);
       startCooldown();
     } catch (err) {
@@ -79,6 +83,11 @@ export function ForgotPassword() {
             </svg>
             <h2>Check Your Email</h2>
             <p>We sent a password reset link to <strong>{email}</strong></p>
+            {resetLink && (
+              <p style={{ marginTop: "0.7rem", fontSize: "0.9rem" }}>
+                Demo reset link: <a href={resetLink}>Reset password now</a>
+              </p>
+            )}
             {cooldown > 0 && (
               <p style={{ fontSize: "0.85rem", color: "#888" }}>
                 You can request another link in {cooldown} seconds
@@ -133,10 +142,12 @@ export function ResetPassword() {
   const [accessToken, setAccessToken] = useState("");
 
   useEffect(() => {
-    // Supabase puts token in URL hash: #access_token=...
+    const params = new URLSearchParams(window.location.search);
+    const tokenFromQuery = params.get("token");
     const hash = window.location.hash;
-    const params = new URLSearchParams(hash.replace("#", "?"));
-    const token = params.get("access_token");
+    const hashParams = new URLSearchParams(hash.replace("#", "?"));
+    const tokenFromHash = hashParams.get("access_token");
+    const token = tokenFromQuery || tokenFromHash;
     if (token) setAccessToken(token);
     else setServerError("Invalid or expired reset link. Please request a new one.");
   }, [location]);

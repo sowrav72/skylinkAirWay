@@ -56,10 +56,8 @@ export function UserProfile() {
 
   const fetchProfile = async () => {
     try {
-      const res  = await fetch(`${API}/profile/me`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ user_id: session.userId, role: "user" }),
+      const res  = await fetch(`${API}/profile/me?user_id=${encodeURIComponent(session.userId)}&role=user`, {
+        method:  "GET",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail);
@@ -82,10 +80,10 @@ export function UserProfile() {
     if (!Object.keys(editData).length) { setEditing(false); return; }
     setSaving(true);
     try {
-      const res  = await fetch(`${API}/profile/user`, {
+       const res  = await fetch(`${API}/profile/user?user_id=${encodeURIComponent(session.userId)}`, {
         method:  "PUT",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ user_id: session.userId, ...editData }),
+        body:    JSON.stringify(editData),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail);
@@ -226,10 +224,8 @@ export function StaffProfile() {
 
   const fetchProfile = async () => {
     try {
-      const res  = await fetch(`${API}/profile/me`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ user_id: session.userId, role: "staff" }),
+      const res  = await fetch(`${API}/profile/me?user_id=${encodeURIComponent(session.userId)}&role=staff`, {
+        method:  "GET",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail);
@@ -254,10 +250,10 @@ export function StaffProfile() {
     if (!Object.keys(editData).length) { setEditing(false); return; }
     setSaving(true);
     try {
-      const res  = await fetch(`${API}/profile/staff`, {
+      const res  = await fetch(`${API}/profile/staff?user_id=${encodeURIComponent(session.userId)}`, {
         method:  "PUT",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ user_id: session.userId, ...editData }),
+        body:    JSON.stringify(editData ),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.detail);

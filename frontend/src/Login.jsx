@@ -57,6 +57,7 @@ export default function Login() {
       localStorage.setItem("userPhone",  data.phone  || "");
       localStorage.setItem("createdAt",  data.created_at || "");
       localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("authToken", data.token || ""); // Store token for API auth
 
       // Staff extras
       if (data.role === "staff") {
