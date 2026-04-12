@@ -1,13 +1,14 @@
 from fastapi import APIRouter, HTTPException
+from sqlalchemy import text 
 from app.schemas import FlightSearchSchema
-from app.database import supabase
+from app.database import engine
 
 router = APIRouter(prefix="/flights", tags=["Flights"])
 
 
 @router.get("/airports")
 async def get_airports():
-    """Return list of airports for search dropdowns."""
+
     airports = [
         {"code": "JFK", "name": "John F. Kennedy International", "city": "New York", "country": "USA"},
         {"code": "LHR", "name": "Heathrow Airport", "city": "London", "country": "UK"},
@@ -35,31 +36,43 @@ async def get_airports():
 
 @router.post("/search")
 async def search_flights(body: FlightSearchSchema):
-    """Search flights from database."""
-    if not supabase:
+    if not engine:
         raise HTTPException(503, "Database not configured")
     try:
-        res = (
-            supabase.table("flights")
-            .select("*")
-            .eq("origin_code", body.origin_code.upper())
-            .eq("destination_code", body.destination_code.upper())
-            .eq("cabin_class", body.cabin_class)
-            .gte("seats_available", body.passengers)
-            .execute()
-        )
-        return {"flights": res.data, "count": len(res.data)}
+        with engine.connect() as conn:
+            rows = conn.execute(
+                text(
+                    """
+                    SELECT * FROM flights
+                    WHERE origin_code = :origin_code
+                      AND destination_code = :destination_code
+                      AND cabin_class = :cabin_class
+                      AND seats_available >= :passengers
+                      AND DATE(departure_time) = :departure_date
+                    ORDER BY departure_time
+                    """
+                ),
+                {
+                    "origin_code": body.origin_code.upper(),
+                    "destination_code": body.destination_code.upper(),
+                    "cabin_class": body.cabin_class,
+                    "passengers": body.passengers,
+                    "departure_date": body.departure_date,
+                },
+            ).mappings().all()
+        flights = [dict(r) for r in rows]
+        return {"flights": flights, "count": len(flights)}
     except Exception as e:
         raise HTTPException(400, str(e))
 
 
 @router.get("/all")
 async def get_all_flights():
-    """Get all available flights."""
-    if not supabase:
+    if not engine:
         raise HTTPException(503, "Database not configured")
     try:
-        res = supabase.table("flights").select("*").order("departure_time").execute()
-        return {"flights": res.data}
+        with engine.connect() as conn:
+            rows = conn.execute(text("SELECT * FROM flights ORDER BY departure_time")).mappings().all()
+        return {"flights": [dict(r) for r in rows]}
     except Exception as e:
         raise HTTPException(400, str(e))
