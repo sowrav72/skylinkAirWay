@@ -1,5 +1,6 @@
-import time
+import uuid
 from fastapi import APIRouter, HTTPException
+from passlib.context import CryptContext
 from app.schemas import (
     UserRegisterSchema,
     StaffRegisterSchema,
@@ -11,184 +12,249 @@ from app.database import supabase, supabase_admin
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-# Simple in-memory cooldowns (moderate security for class project)
-EMAIL_COOLDOWN_SECONDS = 60
-_email_action_timestamps = {}
+# ── bcrypt context ─────────────────────────
+pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def hash_password(plain: str) -> str:
+    return pwd_ctx.hash(plain)
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_ctx.verify(plain, hashed)
 
 
-def _enforce_email_cooldown(action: str, email: str):
-    key = f"{action}:{email.strip().lower()}"
-    now = time.time()
-    last = _email_action_timestamps.get(key, 0)
-    wait_left = int(EMAIL_COOLDOWN_SECONDS - (now - last))
-    if wait_left > 0:
-        raise HTTPException(429, f"Please wait {wait_left} seconds before trying again")
-    _email_action_timestamps[key] = now
-
-
-# ── USER REGISTER ──────────────────────────
+# ══════════════════════════════════════════
+#  REGISTER USER
+# ══════════════════════════════════════════
 @router.post("/register/user")
 async def register_user(body: UserRegisterSchema):
     if not supabase_admin:
-        raise HTTPException(503, "Supabase admin not configured")
-    try:
-        # Admin create_user avoids Supabase signup confirmation email
-        res = supabase_admin.auth.admin.create_user({
-            "email": body.email,
-            "password": body.password,
-            "email_confirm": True,
-            "user_metadata": {"role": "user", "full_name": body.full_name},
-        })
-        if res.user is None:
-            raise HTTPException(400, "Registration failed")
+        raise HTTPException(503, "Database not configured")
 
-        # Insert into profiles table (using admin client to bypass RLS)
+    # Check duplicate email
+    existing = supabase_admin.table("profiles").select("id").eq("email", body.email).execute()
+    if existing.data:
+        raise HTTPException(400, "An account with this email already exists")
+
+    hashed = hash_password(body.password)
+    new_id = str(uuid.uuid4())
+
+    try:
         supabase_admin.table("profiles").insert({
-            "id": res.user.id,
-            "full_name": body.full_name,
-            "role": "user",
+            "id":            new_id,
+            "full_name":     body.full_name,
+            "email":         body.email,
+            "phone":         body.phone,
+            "password_hash": hashed,
+            "role":          "user",
         }).execute()
 
-        return {"message": "User registered successfully.", "user_id": res.user.id}
+        return {
+            "message": "Account created successfully",
+            "user_id": new_id,
+            "role":    "user",
+        }
 
-    except HTTPException:
-        raise
     except Exception as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, f"Registration failed: {str(e)}")
 
 
-# ── STAFF REGISTER ─────────────────────────
+# ══════════════════════════════════════════
+#  REGISTER STAFF
+# ══════════════════════════════════════════
 @router.post("/register/staff")
 async def register_staff(body: StaffRegisterSchema):
     if not supabase_admin:
-        raise HTTPException(503, "Supabase admin not configured")
+        raise HTTPException(503, "Database not configured")
 
-    # Validate staff_id exists and is unused
-    code_check = (
+    # 1. Validate staff_id exists and is unused
+    code = (
         supabase_admin.table("valid_staff_codes")
         .select("*")
         .eq("code", body.staff_id)
         .eq("used", False)
         .execute()
     )
-    if not code_check.data:
-        raise HTTPException(400, "Invalid or already used Staff ID")
+    if not code.data:
+        raise HTTPException(400, "Invalid or already used Staff ID. Contact your manager.")
+
+    # 2. Check duplicate email in profiles OR staff
+    dup_profile = supabase_admin.table("profiles").select("id").eq("email", body.email).execute()
+    dup_staff   = supabase_admin.table("staff").select("id").eq("email", body.email).execute()
+    if dup_profile.data or dup_staff.data:
+        raise HTTPException(400, "An account with this email already exists")
+
+    hashed = hash_password(body.password)
+    new_id = str(uuid.uuid4())
 
     try:
-        # Admin create_user avoids Supabase signup confirmation email
-        res = supabase_admin.auth.admin.create_user({
-            "email": body.email,
-            "password": body.password,
-            "email_confirm": True,
-            "user_metadata": {
-                "role": "staff",
-                "full_name": body.full_name,
-                "staff_id": body.staff_id,
-            },
-        })
-        if res.user is None:
-            raise HTTPException(400, "Registration failed")
-
-        # Insert into profiles with role=staff (using admin client to bypass RLS)
+        # Insert into profiles with role=staff
         supabase_admin.table("profiles").insert({
-            "id": res.user.id,
-            "full_name": body.full_name,
-            "phone": body.phone,
-            "role": "staff",
+            "id":            new_id,
+            "full_name":     body.full_name,
+            "email":         body.email,
+            "phone":         body.phone,
+            "password_hash": hashed,
+            "role":          "staff",
         }).execute()
 
         # Insert into staff table
         supabase_admin.table("staff").insert({
-            "id": res.user.id,
-            "full_name": body.full_name,
-            "staff_id": body.staff_id,
-            "department": body.department or "General",
-            "phone": body.phone,
+            "id":            new_id,
+            "full_name":     body.full_name,
+            "email":         body.email,
+            "staff_id":      body.staff_id,
+            "department":    body.department or "General",
+            "phone":         body.phone,
+            "password_hash": hashed,
         }).execute()
 
         # Mark staff code as used
         supabase_admin.table("valid_staff_codes").update({"used": True}).eq("code", body.staff_id).execute()
 
-        return {"message": "Staff account created successfully.", "user_id": res.user.id}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(400, str(e))
-
-
-# ── LOGIN (user + staff) ───────────────────
-@router.post("/login")
-async def login(body: LoginSchema):
-    if not supabase:
-        raise HTTPException(503, "Supabase not configured")
-    try:
-        res = supabase.auth.sign_in_with_password({
-            "email": body.email,
-            "password": body.password,
-        })
-        if res.user is None:
-            raise HTTPException(401, "Invalid credentials")
-
-        # Check role matches
-        user_role = res.user.user_metadata.get("role", "user")
-        if user_role != body.role:
-            raise HTTPException(403, f"This account is not a {body.role} account")
-
         return {
-            "access_token": res.session.access_token,
-            "refresh_token": res.session.refresh_token,
-            "role": user_role,
-            "user_id": res.user.id,
-            "full_name": res.user.user_metadata.get("full_name", ""),
-            "email": res.user.email,
+            "message": "Staff account created successfully",
+            "user_id": new_id,
+            "role":    "staff",
         }
 
+    except Exception as e:
+        raise HTTPException(400, f"Registration failed: {str(e)}")
+
+
+# ══════════════════════════════════════════
+#  LOGIN  (user + staff)
+# ══════════════════════════════════════════
+@router.post("/login")
+async def login(body: LoginSchema):
+    if not supabase_admin:
+        raise HTTPException(503, "Database not configured")
+
+    role = body.role.lower()
+    if role not in ("user", "staff"):
+        raise HTTPException(400, "Invalid role. Must be 'user' or 'staff'")
+
+    try:
+        if role == "user":
+            # Look up in profiles table
+            res = (
+                supabase_admin.table("profiles")
+                .select("id, full_name, email, phone, role, password_hash, created_at")
+                .eq("email", body.email)
+                .eq("role", "user")
+                .execute()
+            )
+            if not res.data:
+                raise HTTPException(401, "No passenger account found with this email")
+
+            user = res.data[0]
+
+            # Verify password
+            if not verify_password(body.password, user["password_hash"]):
+                raise HTTPException(401, "Incorrect password")
+
+            return {
+                "message":    "Login successful",
+                "user_id":    user["id"],
+                "role":       "user",
+                "full_name":  user["full_name"],
+                "email":      user["email"],
+                "phone":      user.get("phone"),
+                "created_at": str(user.get("created_at", "")),
+            }
+
+        else:
+            # Look up in staff table
+            res = (
+                supabase_admin.table("staff")
+                .select("id, full_name, email, phone, staff_id, department, password_hash, created_at")
+                .eq("email", body.email)
+                .execute()
+            )
+            if not res.data:
+                raise HTTPException(401, "No staff account found with this email")
+
+            staff = res.data[0]
+
+            # Verify password
+            if not verify_password(body.password, staff["password_hash"]):
+                raise HTTPException(401, "Incorrect password")
+
+            return {
+                "message":    "Login successful",
+                "user_id":    staff["id"],
+                "role":       "staff",
+                "full_name":  staff["full_name"],
+                "email":      staff["email"],
+                "phone":      staff.get("phone"),
+                "staff_id":   staff["staff_id"],
+                "department": staff["department"],
+                "created_at": str(staff.get("created_at", "")),
+            }
+
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(401, str(e))
+        raise HTTPException(500, f"Login error: {str(e)}")
 
 
-# ── FORGOT PASSWORD ────────────────────────
+# ══════════════════════════════════════════
+#  FORGOT PASSWORD  (Supabase sends email)
+# ══════════════════════════════════════════
 @router.post("/forgot-password")
 async def forgot_password(body: ForgotPasswordSchema):
     if not supabase:
         raise HTTPException(503, "Supabase not configured")
     try:
-        _enforce_email_cooldown("forgot_password", body.email)
+        # Supabase Auth handles sending the email
         supabase.auth.reset_password_email(
             body.email,
             options={"redirect_to": "http://localhost:3000/reset-password"},
         )
-        return {"message": "If this email exists, a reset link has been sent."}
-    except HTTPException:
-        raise
+        # Always return success to avoid email enumeration
+        return {"message": "If this email is registered, a reset link has been sent."}
     except Exception as e:
-        raise HTTPException(400, str(e))
+        # Still return success (don't reveal if email exists)
+        return {"message": "If this email is registered, a reset link has been sent."}
 
 
-# ── RESET PASSWORD ─────────────────────────
+# ══════════════════════════════════════════
+#  RESET PASSWORD  (Supabase JWT from email)
+# ══════════════════════════════════════════
 @router.post("/reset-password")
 async def reset_password(body: ResetPasswordSchema):
+    """
+    Supabase sends an email with a link containing an access_token.
+    We use that token to update the password.
+    We also update the bcrypt hash in our DB so login still works.
+    """
     if not supabase:
         raise HTTPException(503, "Supabase not configured")
     try:
-        # Set session with access token from email link
-        supabase.auth.set_session(body.access_token, "")
+        # Set Supabase session from the token in the email link
+        session = supabase.auth.set_session(body.access_token, "")
+
+        # Update password in Supabase Auth
         supabase.auth.update_user({"password": body.new_password})
-        return {"message": "Password updated successfully"}
+
+        # Also update bcrypt hash in our profiles/staff tables
+        user_email = session.user.email if session and session.user else None
+        if user_email:
+            new_hash = hash_password(body.new_password)
+            # Update profiles
+            supabase_admin.table("profiles").update({"password_hash": new_hash}).eq("email", user_email).execute()
+            # Update staff (if they exist there too)
+            supabase_admin.table("staff").update({"password_hash": new_hash}).eq("email", user_email).execute()
+
+        return {"message": "Password updated successfully. You can now sign in."}
+
     except Exception as e:
-        raise HTTPException(400, str(e))
+        raise HTTPException(400, f"Password reset failed: {str(e)}")
 
 
-# ── LOGOUT ────────────────────────────────
+# ══════════════════════════════════════════
+#  LOGOUT  (just a confirmation — real
+#  logout happens by clearing localStorage)
+# ══════════════════════════════════════════
 @router.post("/logout")
 async def logout():
-    if not supabase:
-        raise HTTPException(503, "Supabase not configured")
-    try:
-        supabase.auth.sign_out()
-        return {"message": "Logged out successfully"}
-    except Exception as e:
-        raise HTTPException(400, str(e))
+    return {"message": "Logged out successfully"}

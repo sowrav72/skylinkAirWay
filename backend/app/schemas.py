@@ -1,18 +1,13 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from enum import Enum
 
 
-class RoleEnum(str, Enum):
-    user  = "user"
-    staff = "staff"
-
-
-# ── Auth Schemas ───────────────────────────
+# ── Register ──────────────────────────────
 class UserRegisterSchema(BaseModel):
     full_name: str
     email: EmailStr
     password: str
+    phone: Optional[str] = None
 
 
 class StaffRegisterSchema(BaseModel):
@@ -24,12 +19,14 @@ class StaffRegisterSchema(BaseModel):
     phone: Optional[str] = None
 
 
+# ── Login ──────────────────────────────────
 class LoginSchema(BaseModel):
     email: EmailStr
     password: str
-    role: RoleEnum = RoleEnum.user
+    role: str = "user"          # "user" or "staff"
 
 
+# ── Password Reset ─────────────────────────
 class ForgotPasswordSchema(BaseModel):
     email: EmailStr
 
@@ -39,7 +36,7 @@ class ResetPasswordSchema(BaseModel):
     new_password: str
 
 
-# ── Profile Schemas ────────────────────────
+# ── Profile Update ─────────────────────────
 class UserProfileUpdate(BaseModel):
     full_name: Optional[str] = None
     phone: Optional[str] = None
@@ -51,7 +48,7 @@ class StaffProfileUpdate(BaseModel):
     department: Optional[str] = None
 
 
-# ── Flight Search Schema ───────────────────
+# ── Flight Search ──────────────────────────
 class FlightSearchSchema(BaseModel):
     origin_code: str
     destination_code: str

@@ -5,7 +5,7 @@ from sqlalchemy import text
 from app.database import engine
 from app.routes import auth_routes, profile_routes, flight_routes
 
-app = FastAPI(title="SkyLink AirWay API", version="2.0.0")
+app = FastAPI(title="SkyLink AirWay API", version="2.1.0")
 
 # ── CORS ───────────────────────────────────
 frontend_url = os.getenv("FRONTEND_URL", "*")
@@ -26,7 +26,7 @@ app.include_router(flight_routes.router)
 # ── BASE ROUTES ────────────────────────────
 @app.get("/")
 def root():
-    return {"message": "SkyLink AirWay API v2.0 ✈️"}
+    return {"message": "SkyLink AirWay API v2.1 ✈️", "auth": "bcrypt + database"}
 
 
 @app.get("/health")
