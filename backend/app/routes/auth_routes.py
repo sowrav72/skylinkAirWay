@@ -42,8 +42,8 @@ async def register_user(body: UserRegisterSchema):
         if res.user is None:
             raise HTTPException(400, "Registration failed")
 
-        # Insert into profiles table
-        supabase.table("profiles").insert({
+        # Insert into profiles table (using admin client to bypass RLS)
+        supabase_admin.table("profiles").insert({
             "id": res.user.id,
             "full_name": body.full_name,
             "role": "user",
@@ -51,6 +51,8 @@ async def register_user(body: UserRegisterSchema):
 
         return {"message": "User registered successfully.", "user_id": res.user.id}
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(400, str(e))
 
@@ -63,7 +65,7 @@ async def register_staff(body: StaffRegisterSchema):
 
     # Validate staff_id exists and is unused
     code_check = (
-        supabase.table("valid_staff_codes")
+        supabase_admin.table("valid_staff_codes")
         .select("*")
         .eq("code", body.staff_id)
         .eq("used", False)
@@ -87,8 +89,8 @@ async def register_staff(body: StaffRegisterSchema):
         if res.user is None:
             raise HTTPException(400, "Registration failed")
 
-        # Insert into profiles with role=staff
-        supabase.table("profiles").insert({
+        # Insert into profiles with role=staff (using admin client to bypass RLS)
+        supabase_admin.table("profiles").insert({
             "id": res.user.id,
             "full_name": body.full_name,
             "phone": body.phone,
@@ -96,7 +98,7 @@ async def register_staff(body: StaffRegisterSchema):
         }).execute()
 
         # Insert into staff table
-        supabase.table("staff").insert({
+        supabase_admin.table("staff").insert({
             "id": res.user.id,
             "full_name": body.full_name,
             "staff_id": body.staff_id,
@@ -105,10 +107,12 @@ async def register_staff(body: StaffRegisterSchema):
         }).execute()
 
         # Mark staff code as used
-        supabase.table("valid_staff_codes").update({"used": True}).eq("code", body.staff_id).execute()
+        supabase_admin.table("valid_staff_codes").update({"used": True}).eq("code", body.staff_id).execute()
 
         return {"message": "Staff account created successfully.", "user_id": res.user.id}
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(400, str(e))
 
