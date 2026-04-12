@@ -5,7 +5,7 @@ from sqlalchemy import text
 from app.database import engine
 from app.routes import auth_routes, profile_routes, flight_routes
 
-app = FastAPI(title="SkyLink AirWay API", version="2.1.0")
+app = FastAPI(title="SkyLink AirWay API", version="3.0.0")
 
 # ── CORS ───────────────────────────────────
 frontend_url = os.getenv("FRONTEND_URL", "*")
@@ -23,10 +23,9 @@ app.include_router(profile_routes.router)
 app.include_router(flight_routes.router)
 
 
-# ── BASE ROUTES ────────────────────────────
 @app.get("/")
 def root():
-    return {"message": "SkyLink AirWay API v2.1 ✈️", "auth": "bcrypt + database"}
+    return {"message": "SkyLink AirWay API v3.0 ✈️", "db": "Neon PostgreSQL", "auth": "bcrypt + JWT"}
 
 
 @app.get("/health")
@@ -40,8 +39,7 @@ def db_check():
         return {"connected": False, "message": "DATABASE_URL not configured"}
     try:
         with engine.connect() as conn:
-            result = conn.execute(text("SELECT NOW()"))
-            server_time = result.scalar()
-        return {"connected": True, "server_time": str(server_time)}
+            row = conn.execute(text("SELECT NOW()")).scalar()
+        return {"connected": True, "server_time": str(row)}
     except Exception as e:
         return {"connected": False, "error": str(e)}

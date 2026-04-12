@@ -2,7 +2,6 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional
 
 
-# ── Register ──────────────────────────────
 class UserRegisterSchema(BaseModel):
     full_name: str
     email: EmailStr
@@ -19,36 +18,39 @@ class StaffRegisterSchema(BaseModel):
     phone: Optional[str] = None
 
 
-# ── Login ──────────────────────────────────
 class LoginSchema(BaseModel):
     email: EmailStr
     password: str
-    role: str = "user"          # "user" or "staff"
+    role: str = "user"
 
 
-# ── Password Reset ─────────────────────────
 class ForgotPasswordSchema(BaseModel):
     email: EmailStr
 
 
 class ResetPasswordSchema(BaseModel):
-    access_token: str
+    token: str
     new_password: str
 
 
-# ── Profile Update ─────────────────────────
 class UserProfileUpdate(BaseModel):
+    user_id: str
     full_name: Optional[str] = None
     phone: Optional[str] = None
 
 
 class StaffProfileUpdate(BaseModel):
+    user_id: str
     full_name: Optional[str] = None
     phone: Optional[str] = None
     department: Optional[str] = None
 
 
-# ── Flight Search ──────────────────────────
+class GetProfileSchema(BaseModel):
+    user_id: str
+    role: str
+
+
 class FlightSearchSchema(BaseModel):
     origin_code: str
     destination_code: str

@@ -1,64 +1,24 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { API } from "./api";
 import "./Auth.css";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
-
-// ── FORGOT PASSWORD PAGE ───────────────────
+// ── FORGOT PASSWORD ────────────────────────
 export function ForgotPassword() {
-  const [email, setEmail] = useState("");
-  const [resetLink, setResetLink] = useState("");
+  const [email,   setEmail]   = useState("");
   const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState("");
-  const [cooldown, setCooldown] = useState(0);
-  const cooldownRef = useRef(null);
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (cooldownRef.current) clearInterval(cooldownRef.current);
-    };
-  }, []);
-
-  const startCooldown = () => {
-    setCooldown(60);
-    cooldownRef.current = setInterval(() => {
-      setCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(cooldownRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+  const [result,  setResult]  = useState(null);   // { token, message }
+  const [error,   setError]   = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!email) { setError("Email is required"); return; }
-    
-    // Check cooldown
-    if (cooldown > 0) {
-      setError(`Please wait ${cooldown} seconds before trying again`);
-      return;
-    }
 
     setLoading(true);
     try {
-      const res = await fetch(`${API}/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Failed");
-      if (data.reset_token) {
-        setResetLink(`${window.location.origin}/reset-password?token=${encodeURIComponent(data.reset_token)}`);
-      }
-      setSent(true);
-      startCooldown();
+      const data = await API.post("/auth/forgot-password", { email });
+      setResult(data);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -70,54 +30,54 @@ export function ForgotPassword() {
     <div className="auth-page">
       <div className="glass-container">
         <div className="auth-logo">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
             <path d="M4 20L16 4L28 20L22 18L16 28L10 18L4 20Z" fill="#1877f2" opacity="0.9"/>
           </svg>
           <span>Skylink AirWay</span>
         </div>
 
-        {sent ? (
-          <div className="success-box">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="1.5">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13 19.79 19.79 0 0 1 1.61 4.35 2 2 0 0 1 3.6 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 9.91a16 16 0 0 0 6.06 6.06l.91-.91a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 17"/>
-            </svg>
-            <h2>Check Your Email</h2>
-            <p>We sent a password reset link to <strong>{email}</strong></p>
-            {resetLink && (
-              <p style={{ marginTop: "0.7rem", fontSize: "0.9rem" }}>
-                Demo reset link: <a href={resetLink}>Reset password now</a>
-              </p>
-            )}
-            {cooldown > 0 && (
-              <p style={{ fontSize: "0.85rem", color: "#888" }}>
-                You can request another link in {cooldown} seconds
-              </p>
-            )}
-            <Link to="/login" className="auth-btn" style={{display:"block",textAlign:"center",marginTop:"1rem"}}>
-              Back to Sign In
+        {result ? (
+          /* ── SHOW RESET TOKEN ── */
+          <div>
+            <h2>Reset Token Generated</h2>
+            <p className="auth-subtitle">Copy the token below and use it to reset your password</p>
+
+            <div className="token-box">
+              <p className="token-label">Your Reset Token</p>
+              <textarea
+                className="token-value"
+                readOnly
+                value={result.reset_token || ""}
+                rows={4}
+                onClick={e => e.target.select()}
+              />
+              <p className="token-hint">Click the box to select all, then copy it.</p>
+            </div>
+
+            <Link
+              to="/reset-password"
+              state={{ token: result.reset_token }}
+              className="auth-btn"
+              style={{ display: "block", textAlign: "center", marginTop: "1rem", textDecoration: "none" }}
+            >
+              Continue to Reset Password →
             </Link>
           </div>
         ) : (
+          /* ── EMAIL FORM ── */
           <>
             <h2>Forgot Password?</h2>
-            <p className="auth-subtitle">Enter your email and we'll send you a reset link</p>
+            <p className="auth-subtitle">Enter your email to generate a reset token</p>
 
             <form className="auth-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Email Address</label>
-                <input
-                  type="email" placeholder="you@example.com"
-                  value={email} onChange={(e) => setEmail(e.target.value)}
-                />
+                <input type="email" placeholder="you@example.com"
+                  value={email} onChange={e => setEmail(e.target.value)} />
               </div>
               {error && <div className="server-error">{error}</div>}
-              <button type="submit" className="auth-btn" disabled={loading || cooldown > 0}>
-                {loading 
-                  ? <span className="spinner" /> 
-                  : cooldown > 0 
-                    ? `Wait ${cooldown}s` 
-                    : "Send Reset Link"
-                }
+              <button type="submit" className="auth-btn" disabled={loading}>
+                {loading ? <span className="spinner" /> : "Get Reset Token"}
               </button>
             </form>
 
@@ -131,54 +91,31 @@ export function ForgotPassword() {
   );
 }
 
-// ── RESET PASSWORD PAGE ────────────────────
+
+// ── RESET PASSWORD ─────────────────────────
 export function ResetPassword() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [formData, setFormData] = useState({ newPassword: "", confirmPassword: "" });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [serverError, setServerError] = useState("");
-  const [accessToken, setAccessToken] = useState("");
+  const navigate  = useNavigate();
+  const location  = useLocation_safe();
+  const [token,       setToken]       = useState(location?.state?.token || "");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirm,     setConfirm]     = useState("");
+  const [loading,     setLoading]     = useState(false);
+  const [error,       setError]       = useState("");
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tokenFromQuery = params.get("token");
-    const hash = window.location.hash;
-    const hashParams = new URLSearchParams(hash.replace("#", "?"));
-    const tokenFromHash = hashParams.get("access_token");
-    const token = tokenFromQuery || tokenFromHash;
-    if (token) setAccessToken(token);
-    else setServerError("Invalid or expired reset link. Please request a new one.");
-  }, [location]);
-
-  const validate = () => {
-    const e = {};
-    if (!formData.newPassword) e.newPassword = "Password is required";
-    else if (formData.newPassword.length < 6) e.newPassword = "Min 6 characters";
-    if (formData.newPassword !== formData.confirmPassword)
-      e.confirmPassword = "Passwords do not match";
-    return e;
-  };
-
-  const handleSubmit = async (ev) => {
-    ev.preventDefault();
-    setServerError("");
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    if (!token)       { setError("Reset token is required"); return; }
+    if (!newPassword) { setError("New password is required"); return; }
+    if (newPassword.length < 6) { setError("Min 6 characters"); return; }
+    if (newPassword !== confirm) { setError("Passwords do not match"); return; }
 
     setLoading(true);
     try {
-      const res = await fetch(`${API}/auth/reset-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ access_token: accessToken, new_password: formData.newPassword }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Reset failed");
+      await API.post("/auth/reset-password", { token, new_password: newPassword });
       navigate("/login", { state: { message: "Password updated! You can now sign in." } });
     } catch (err) {
-      setServerError(err.message);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -188,41 +125,63 @@ export function ResetPassword() {
     <div className="auth-page">
       <div className="glass-container">
         <div className="auth-logo">
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
             <path d="M4 20L16 4L28 20L22 18L16 28L10 18L4 20Z" fill="#1877f2" opacity="0.9"/>
           </svg>
           <span>Skylink AirWay</span>
         </div>
 
         <h2>Set New Password</h2>
-        <p className="auth-subtitle">Enter your new password below</p>
+        <p className="auth-subtitle">Paste your reset token and choose a new password</p>
 
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
+            <label>Reset Token</label>
+            <textarea
+              className="pf-input token-input"
+              rows={3}
+              placeholder="Paste your reset token here..."
+              value={token}
+              onChange={e => setToken(e.target.value)}
+              style={{ resize: "vertical", fontFamily: "monospace", fontSize: ".75rem" }}
+            />
+          </div>
+
+          <div className="form-group">
             <label>New Password</label>
-            <input type="password" placeholder="Create a new password"
-              value={formData.newPassword}
-              onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
-              className={errors.newPassword ? "err" : ""} />
-            {errors.newPassword && <span className="error">{errors.newPassword}</span>}
+            <input type="password" placeholder="Min 6 characters"
+              value={newPassword} onChange={e => setNewPassword(e.target.value)} />
           </div>
 
           <div className="form-group">
             <label>Confirm New Password</label>
             <input type="password" placeholder="Repeat new password"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              className={errors.confirmPassword ? "err" : ""} />
-            {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
+              value={confirm} onChange={e => setConfirm(e.target.value)} />
           </div>
 
-          {serverError && <div className="server-error">{serverError}</div>}
+          {error && <div className="server-error">{error}</div>}
 
-          <button type="submit" className="auth-btn" disabled={loading || !accessToken}>
+          <button type="submit" className="auth-btn" disabled={loading}>
             {loading ? <span className="spinner" /> : "Update Password"}
           </button>
         </form>
+
+        <p className="auth-footer">
+          <Link to="/forgot-password">← Get a new reset token</Link>
+        </p>
       </div>
     </div>
   );
+}
+
+// Safe useLocation wrapper
+function useLocation_safe() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { useLocation } = require("react-router-dom");
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useLocation();
+  } catch {
+    return null;
+  }
 }

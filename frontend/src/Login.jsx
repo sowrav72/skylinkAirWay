@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { API } from "./api";
 import "./Auth.css";
-
-const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 export default function Login() {
   const navigate  = useNavigate();
   const location  = useLocation();
-  const [role, setRole]           = useState("user");
-  const [formData, setFormData]   = useState({ email: "", password: "" });
-  const [errors, setErrors]       = useState({});
-  const [loading, setLoading]     = useState(false);
+  const [role,        setRole]        = useState("user");
+  const [formData,    setFormData]    = useState({ email: "", password: "" });
+  const [errors,      setErrors]      = useState({});
+  const [loading,     setLoading]     = useState(false);
   const [serverError, setServerError] = useState("");
-  const [successMsg, setSuccessMsg]   = useState("");
+  const [successMsg,  setSuccessMsg]  = useState("");
 
-  // Show success message if redirected from Register
   useEffect(() => {
     if (location.state?.message) setSuccessMsg(location.state.message);
   }, [location.state]);
@@ -22,6 +20,7 @@ export default function Login() {
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" });
+    setServerError("");
   };
 
   const validate = () => {
@@ -29,7 +28,7 @@ export default function Login() {
     if (!formData.email)    e.email    = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.email)) e.email = "Invalid email";
     if (!formData.password) e.password = "Password is required";
-    else if (formData.password.length < 6)          e.password = "Min 6 characters";
+    else if (formData.password.length < 6) e.password = "Min 6 characters";
     return e;
   };
 
@@ -41,15 +40,10 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const res  = await fetch(`${API}/auth/login`, {
-        method:  "POST",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ ...formData, role }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Login failed");
+      const data = await API.post("/auth/login", { ...formData, role });
 
-      // ── Store everything in localStorage ──────────
+      // ── Store session in localStorage ──────────
+      localStorage.setItem("authToken",  data.access_token);
       localStorage.setItem("userId",     data.user_id);
       localStorage.setItem("userRole",   data.role);
       localStorage.setItem("userName",   data.full_name);
@@ -57,15 +51,12 @@ export default function Login() {
       localStorage.setItem("userPhone",  data.phone  || "");
       localStorage.setItem("createdAt",  data.created_at || "");
       localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("authToken", data.token || ""); // Store token for API auth
 
-      // Staff extras
       if (data.role === "staff") {
-        localStorage.setItem("staffId",     data.staff_id   || "");
-        localStorage.setItem("department",  data.department || "");
+        localStorage.setItem("staffId",    data.staff_id   || "");
+        localStorage.setItem("department", data.department || "");
       }
 
-      // ── Redirect to profile ───────────────────────
       navigate(data.role === "staff" ? "/profile/staff" : "/profile/user");
 
     } catch (err) {
@@ -78,8 +69,6 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="glass-container">
-
-        {/* LOGO */}
         <div className="auth-logo">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
             <path d="M4 20L16 4L28 20L22 18L16 28L10 18L4 20Z" fill="#1877f2" opacity="0.9"/>
@@ -90,15 +79,12 @@ export default function Login() {
         <h2>Welcome Back</h2>
         <p className="auth-subtitle">Sign in to continue your journey</p>
 
-        {/* SUCCESS MESSAGE (from Register redirect) */}
         {successMsg && <div className="success-msg">{successMsg}</div>}
 
-        {/* ROLE TOGGLE */}
         <div className="role-toggle">
           <button type="button" className={`rtab${role === "user" ? " active" : ""}`} onClick={() => setRole("user")}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
             </svg>
             Passenger
           </button>
@@ -114,21 +100,17 @@ export default function Login() {
         <form className="auth-form" onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email Address</label>
-            <input
-              name="email" type="email" placeholder="you@example.com"
+            <input name="email" type="email" placeholder="you@example.com"
               value={formData.email} onChange={handleChange}
-              className={errors.email ? "err" : ""}
-            />
+              className={errors.email ? "err" : ""} />
             {errors.email && <span className="error">{errors.email}</span>}
           </div>
 
           <div className="form-group">
             <label>Password</label>
-            <input
-              name="password" type="password" placeholder="••••••••"
+            <input name="password" type="password" placeholder="••••••••"
               value={formData.password} onChange={handleChange}
-              className={errors.password ? "err" : ""}
-            />
+              className={errors.password ? "err" : ""} />
             {errors.password && <span className="error">{errors.password}</span>}
           </div>
 
@@ -140,10 +122,7 @@ export default function Login() {
           {serverError && <div className="server-error">{serverError}</div>}
 
           <button type="submit" className="auth-btn" disabled={loading}>
-            {loading
-              ? <span className="spinner" />
-              : `Sign In as ${role === "staff" ? "Staff" : "Passenger"}`
-            }
+            {loading ? <span className="spinner" /> : `Sign In as ${role === "staff" ? "Staff" : "Passenger"}`}
           </button>
         </form>
 
