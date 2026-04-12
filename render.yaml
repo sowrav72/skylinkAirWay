@@ -8,7 +8,7 @@ services:
     healthCheckPath: /health
     envVars:
       - key: FRONTEND_URL
-        value: https://skylinkairway-frontend.onrender.com
+        value: https://skylinkairway-frontend.onrender.com,https://skylinkairway.onrender.com
       - key: DATABASE_URL
         sync: false
 
