@@ -1,36 +1,49 @@
 import os
-from fastapi import HTTPException, Security
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from datetime import datetime, timedelta
 from jose import jwt, JWTError
+from fastapi import HTTPException
+from passlib.context import CryptContext
 
-SECRET_KEY = os.getenv("SECRET_KEY", "")
-security = HTTPBearer(auto_error=False)
+SECRET_KEY = os.getenv("SECRET_KEY", "changeme-use-a-long-random-string")
+ALGORITHM  = "HS256"
+
+pwd_ctx = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
-    if not credentials:
-        raise HTTPException(status_code=401, detail="Missing authorization token")
-    if not SECRET_KEY:
-        raise HTTPException(status_code=500, detail="SECRET_KEY is not configured")
-    
-    token = credentials.credentials
+# ── Password ───────────────────────────────
+def hash_password(plain: str) -> str:
+    return pwd_ctx.hash(plain)
+
+def verify_password(plain: str, hashed: str) -> bool:
+    return pwd_ctx.verify(plain, hashed)
+
+
+# ── JWT ────────────────────────────────────
+def create_token(data: dict, expires_hours: int = 24) -> str:
+    payload = data.copy()
+    payload["exp"] = datetime.utcnow() + timedelta(hours=expires_hours)
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def decode_token(token: str) -> dict:
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-        return payload
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     except JWTError as e:
-        raise HTTPException(status_code=401, detail=f"Invalid token: {str(e)}")
+        raise HTTPException(401, f"Invalid or expired token: {e}")
 
 
-def get_current_user(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
-    return verify_token(credentials)
+def create_access_token(user_id: str, role: str) -> str:
+    return create_token({"sub": user_id, "role": role}, expires_hours=24)
 
 
-def require_role(role: str):
-    def checker(credentials: HTTPAuthorizationCredentials = Security(security)) -> dict:
-        payload = verify_token(credentials)
-        user_role = payload.get("role","users")
-        if user_role != role:
-            raise HTTPException(status_code=403, detail=f"Access denied. Required role: {role}")
-        return payload
-    
-    return checker
+def create_reset_token(email: str) -> str:
+    """Short-lived token for password reset (1 hour)."""
+    return create_token({"email": email, "purpose": "reset"}, expires_hours=1)
+
+
+def verify_reset_token(token: str) -> str:
+    """Returns the email from a valid reset token."""
+    payload = decode_token(token)
+    if payload.get("purpose") != "reset":
+        raise HTTPException(400, "Invalid reset token")
+    return payload["email"]
