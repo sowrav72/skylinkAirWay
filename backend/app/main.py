@@ -8,10 +8,18 @@ from app.routes import auth_routes, profile_routes, flight_routes
 app = FastAPI(title="SkyLink AirWay API", version="3.0.0")
 
 # ── CORS ───────────────────────────────────
+# Support single URL or comma-separated list of URLs
 frontend_url = os.getenv("FRONTEND_URL", "*")
+
+if frontend_url == "*":
+    origins = ["*"]
+else:
+    # Split comma-separated origins and strip whitespace
+    origins = [url.strip() for url in frontend_url.split(",") if url.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[frontend_url] if frontend_url != "*" else ["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -25,7 +33,12 @@ app.include_router(flight_routes.router)
 
 @app.get("/")
 def root():
-    return {"message": "SkyLink AirWay API v3.0 ✈️", "db": "Neon PostgreSQL", "auth": "bcrypt + JWT"}
+    return {
+        "message": "SkyLink AirWay API v3.0 ✈️",
+        "db":      "Neon PostgreSQL",
+        "auth":    "bcrypt + JWT",
+        "origins": origins,
+    }
 
 
 @app.get("/health")

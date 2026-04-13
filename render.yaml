@@ -8,8 +8,10 @@ services:
     healthCheckPath: /health
     envVars:
       - key: FRONTEND_URL
-        value: https://skylinkairway-frontend.onrender.com,https://skylinkairway.onrender.com
+        value: https://skylinkairway-1.onrender.com
       - key: DATABASE_URL
+        sync: false
+      - key: SECRET_KEY
         sync: false
 
   - type: static
@@ -17,7 +19,7 @@ services:
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: build
-    pullRequestPreviewsEnabled: true
+    pullRequestPreviewsEnabled: false
     envVars:
       - key: REACT_APP_API_URL
         value: https://skylinkairway.onrender.com
