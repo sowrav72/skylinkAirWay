@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { API } from "./api";
 import "./Auth.css";
 
@@ -7,14 +7,13 @@ import "./Auth.css";
 export function ForgotPassword() {
   const [email,   setEmail]   = useState("");
   const [loading, setLoading] = useState(false);
-  const [result,  setResult]  = useState(null);   // { token, message }
+  const [result,  setResult]  = useState(null);
   const [error,   setError]   = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     if (!email) { setError("Email is required"); return; }
-
     setLoading(true);
     try {
       const data = await API.post("/auth/forgot-password", { email });
@@ -29,6 +28,7 @@ export function ForgotPassword() {
   return (
     <div className="auth-page">
       <div className="glass-container">
+
         <div className="auth-logo">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
             <path d="M4 20L16 4L28 20L22 18L16 28L10 18L4 20Z" fill="#1877f2" opacity="0.9"/>
@@ -37,10 +37,9 @@ export function ForgotPassword() {
         </div>
 
         {result ? (
-          /* ── SHOW RESET TOKEN ── */
-          <div>
-            <h2>Reset Token Generated</h2>
-            <p className="auth-subtitle">Copy the token below and use it to reset your password</p>
+          <>
+            <h2>Reset Token Ready</h2>
+            <p className="auth-subtitle">Copy the token below then reset your password</p>
 
             <div className="token-box">
               <p className="token-label">Your Reset Token</p>
@@ -49,7 +48,7 @@ export function ForgotPassword() {
                 readOnly
                 value={result.reset_token || ""}
                 rows={4}
-                onClick={e => e.target.select()}
+                onClick={(e) => e.target.select()}
               />
               <p className="token-hint">Click the box to select all, then copy it.</p>
             </div>
@@ -58,22 +57,25 @@ export function ForgotPassword() {
               to="/reset-password"
               state={{ token: result.reset_token }}
               className="auth-btn"
-              style={{ display: "block", textAlign: "center", marginTop: "1rem", textDecoration: "none" }}
+              style={{ display:"block", textAlign:"center", marginTop:"1rem", textDecoration:"none" }}
             >
               Continue to Reset Password →
             </Link>
-          </div>
+          </>
         ) : (
-          /* ── EMAIL FORM ── */
           <>
             <h2>Forgot Password?</h2>
-            <p className="auth-subtitle">Enter your email to generate a reset token</p>
+            <p className="auth-subtitle">Enter your email to get a reset token</p>
 
             <form className="auth-form" onSubmit={handleSubmit}>
               <div className="form-group">
                 <label>Email Address</label>
-                <input type="email" placeholder="you@example.com"
-                  value={email} onChange={e => setEmail(e.target.value)} />
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
               {error && <div className="server-error">{error}</div>}
               <button type="submit" className="auth-btn" disabled={loading}>
@@ -95,8 +97,9 @@ export function ForgotPassword() {
 // ── RESET PASSWORD ─────────────────────────
 export function ResetPassword() {
   const navigate  = useNavigate();
-  const location  = useLocation_safe();
-  const [token,       setToken]       = useState(location?.state?.token || "");
+  const location  = useLocation();
+
+  const [token,       setToken]       = useState(location.state?.token || "");
   const [newPassword, setNewPassword] = useState("");
   const [confirm,     setConfirm]     = useState("");
   const [loading,     setLoading]     = useState(false);
@@ -105,15 +108,21 @@ export function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    if (!token)       { setError("Reset token is required"); return; }
-    if (!newPassword) { setError("New password is required"); return; }
-    if (newPassword.length < 6) { setError("Min 6 characters"); return; }
+
+    if (!token.trim())   { setError("Reset token is required"); return; }
+    if (!newPassword)    { setError("New password is required"); return; }
+    if (newPassword.length < 6) { setError("Password must be at least 6 characters"); return; }
     if (newPassword !== confirm) { setError("Passwords do not match"); return; }
 
     setLoading(true);
     try {
-      await API.post("/auth/reset-password", { token, new_password: newPassword });
-      navigate("/login", { state: { message: "Password updated! You can now sign in." } });
+      await API.post("/auth/reset-password", {
+        token:        token.trim(),
+        new_password: newPassword,
+      });
+      navigate("/login", {
+        state: { message: "Password updated successfully! You can now sign in." },
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -124,6 +133,7 @@ export function ResetPassword() {
   return (
     <div className="auth-page">
       <div className="glass-container">
+
         <div className="auth-logo">
           <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
             <path d="M4 20L16 4L28 20L22 18L16 28L10 18L4 20Z" fill="#1877f2" opacity="0.9"/>
@@ -138,25 +148,43 @@ export function ResetPassword() {
           <div className="form-group">
             <label>Reset Token</label>
             <textarea
-              className="pf-input token-input"
               rows={3}
               placeholder="Paste your reset token here..."
               value={token}
-              onChange={e => setToken(e.target.value)}
-              style={{ resize: "vertical", fontFamily: "monospace", fontSize: ".75rem" }}
+              onChange={(e) => setToken(e.target.value)}
+              style={{
+                width: "100%",
+                background: "rgba(255,255,255,0.8)",
+                border: "1px solid rgba(200,220,255,0.7)",
+                borderRadius: "10px",
+                padding: "0.7rem 0.9rem",
+                fontFamily: "monospace",
+                fontSize: "0.75rem",
+                color: "#0a1f44",
+                resize: "vertical",
+                outline: "none",
+              }}
             />
           </div>
 
           <div className="form-group">
             <label>New Password</label>
-            <input type="password" placeholder="Min 6 characters"
-              value={newPassword} onChange={e => setNewPassword(e.target.value)} />
+            <input
+              type="password"
+              placeholder="Min 6 characters"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
           </div>
 
           <div className="form-group">
             <label>Confirm New Password</label>
-            <input type="password" placeholder="Repeat new password"
-              value={confirm} onChange={e => setConfirm(e.target.value)} />
+            <input
+              type="password"
+              placeholder="Repeat new password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+            />
           </div>
 
           {error && <div className="server-error">{error}</div>}
@@ -172,16 +200,4 @@ export function ResetPassword() {
       </div>
     </div>
   );
-}
-
-// Safe useLocation wrapper
-function useLocation_safe() {
-  try {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    const { useLocation } = require("react-router-dom");
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    return useLocation();
-  } catch {
-    return null;
-  }
 }
