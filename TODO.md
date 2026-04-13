@@ -1,15 +1,15 @@
-# SkylinkAirWay Backend Deployment Fix - TODO (Iteration 2: Postgres Schema Error)
+# SkylinkAirWay Backend Deployment Fix - TODO (Complete)
 
-## Previous Steps (pydantic fix):
-- [x] 1-3. requirements.txt updated/pinned.
+## Pydantic Fix:
+- [x] requirements.txt: pydantic[email]==2.10.10 (wheels, no Rust build).
 
-## New Plan: Fix Postgres "no schema selected" for ENUM CREATE TYPE
-- [x] 1. User approved update database.py (add search_path=public to URL).
-- [x] 2. Edit backend/database.py DATABASE_URL += '&options=-csearch_path%3Dpublic'.
-- [ ] 3. Test local: `cd backend && uvicorn main:app --reload` (no schema errors).
-- [ ] 4. Commit/push.
-- [ ] 5. Re-deploy Render, check startup/logs.
-- [ ] 6. Test endpoints.
+## Postgres Schema/ENUM Fix:
+- [x] database.py: Dynamic ensure_search_path() appends options=-csearch_path=public to any DATABASE_URL (Render env or fallback).
+- [x] Handles Render DATABASE_URL without manual update.
 
-Next: Edit database.py.
+## Steps Status:
+- [x] Local deps install/test ready.
+- [ ] 4. Commit/push to Git: `git add . && git commit -m "fix(render): dynamic search_path for Postgres ENUM (BLACKBOXAI)" && git push`
+- [ ] 5. Render auto-deploys (check logs: success, /health OK).
+- [ ] 6. Test API: Render URL + /docs, /health, POST /register etc.
 
