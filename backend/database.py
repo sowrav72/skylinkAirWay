@@ -1,21 +1,25 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
 import os
-from dotenv import load_dotenv
+from sqlalchemy import create_engine, event
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import QueuePool
 
-load_dotenv()
+DATABASE_URL = os.environ["DATABASE_URL"]
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://neondb_owner:npg_PmLItYTeZz47@ep-wandering-mode-a1s26u1f-pooler.ap-southeast-1.aws.neon.tech/skylink_db?sslmode=require&channel_binding=require"
-)
-
+# Neon requires sslmode=require; psycopg2 handles it via the URL
+# Use a small pool since Neon free tier limits connections
 engine = create_engine(
     DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=5,
-    max_overflow=10,
-    pool_recycle=300,
+    poolclass=QueuePool,
+    pool_size=2,
+    max_overflow=3,
+    pool_timeout=30,
+    pool_recycle=300,          # recycle connections every 5 min
+    pool_pre_ping=True,        # verify connection before use
+    connect_args={
+        "connect_timeout": 10,
+        "options": "-c statement_timeout=30000",
+    },
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

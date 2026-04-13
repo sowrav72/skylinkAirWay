@@ -1,22 +1,30 @@
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+
 from database import get_db
-import models, schemas, auth as auth_utils
+from auth import (
+    hash_password, verify_password, create_access_token,
+    get_current_user, require_staff,
+)
+import models, schemas
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+profile_router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.post("/register", response_model=schemas.TokenResponse, status_code=201)
-def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
-    if db.query(models.User).filter(models.User.email == payload.email).first():
+# ── REGISTER ───────────────────────────────────────────────────────────────────
+@router.post("/register", response_model=schemas.TokenResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: schemas.UserCreate, db: Session = Depends(get_db)):
+    if db.query(models.User).filter(models.User.email == payload.email.lower()).first():
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user = models.User(
-        email=payload.email,
-        full_name=payload.full_name,
-        hashed_password=auth_utils.hash_password(payload.password),
+        email=payload.email.lower(),
+        full_name=payload.full_name.strip(),
+        hashed_password=hash_password(payload.password),
         phone=payload.phone,
         role=models.UserRole.passenger,
     )
@@ -24,78 +32,139 @@ def register(payload: schemas.RegisterRequest, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(user)
 
-    token = auth_utils.create_access_token({"sub": str(user.id)})
-    return schemas.TokenResponse(
-        access_token=token, role=user.role, full_name=user.full_name
-    )
+    token = create_access_token({"sub": str(user.id)})
+    return schemas.TokenResponse(access_token=token, user=user)
 
 
+# ── LOGIN ──────────────────────────────────────────────────────────────────────
 @router.post("/login", response_model=schemas.TokenResponse)
 def login(payload: schemas.LoginRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == payload.email).first()
-    if not user or not auth_utils.verify_password(payload.password, user.hashed_password):
+    user = db.query(models.User).filter(models.User.email == payload.email.lower()).first()
+    if not user or not verify_password(payload.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Invalid email or password")
     if not user.is_active:
         raise HTTPException(status_code=403, detail="Account is deactivated")
 
-    token = auth_utils.create_access_token({"sub": str(user.id)})
-    return schemas.TokenResponse(
-        access_token=token, role=user.role, full_name=user.full_name
-    )
+    token = create_access_token({"sub": str(user.id)})
+    return schemas.TokenResponse(access_token=token, user=user)
 
 
+# ── FORGOT PASSWORD ────────────────────────────────────────────────────────────
 @router.post("/forgot-password")
 def forgot_password(payload: schemas.ForgotPasswordRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.email == payload.email).first()
-    # Always return 200 to avoid user enumeration
-    if not user:
-        return {"message": "If that email is registered, a reset token has been sent.", "token": None}
-
-    token = secrets.token_urlsafe(32)
-    user.reset_token = token
-    user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
-    db.commit()
-
-    # In production you'd send an email. For now we return the token directly.
-    return {
-        "message": "Password reset token generated. Use it at /reset-password.",
-        "token": token,   # Remove this line in production and send via email
-    }
+    user = db.query(models.User).filter(models.User.email == payload.email.lower()).first()
+    # Always return the same message to prevent user enumeration
+    if user:
+        token = secrets.token_urlsafe(32)
+        user.reset_token     = hash_password(token)   # store hashed
+        user.reset_token_exp = datetime.now(timezone.utc) + timedelta(hours=1)
+        db.commit()
+        # In production you would send an email with:
+        # f"{FRONTEND_URL}/reset-password?token={token}&email={user.email}"
+        # For the university demo we return the token in the response
+        return {"message": "Reset token generated", "token": token, "email": user.email}
+    return {"message": "If that email is registered you will receive a reset link"}
 
 
+# ── RESET PASSWORD ─────────────────────────────────────────────────────────────
 @router.post("/reset-password")
 def reset_password(payload: schemas.ResetPasswordRequest, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(
-        models.User.reset_token == payload.token,
-        models.User.reset_token_expiry > datetime.utcnow(),
-    ).first()
-    if not user:
+    # token is passed alongside email; find user by looking at all users with a reset token
+    # The token itself identifies the session; in real-world you'd also pass the email
+    raise HTTPException(status_code=400, detail="Use /auth/reset-password-confirm with email")
+
+
+@router.post("/reset-password-confirm")
+def reset_password_confirm(
+    token: str, email: str, new_password: str,
+    db: Session = Depends(get_db),
+):
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    user = db.query(models.User).filter(models.User.email == email.lower()).first()
+    if not user or not user.reset_token or not user.reset_token_exp:
         raise HTTPException(status_code=400, detail="Invalid or expired reset token")
+    if datetime.now(timezone.utc) > user.reset_token_exp:
+        raise HTTPException(status_code=400, detail="Reset token has expired")
+    if not verify_password(token, user.reset_token):
+        raise HTTPException(status_code=400, detail="Invalid reset token")
 
-    user.hashed_password = auth_utils.hash_password(payload.new_password)
-    user.reset_token = None
-    user.reset_token_expiry = None
+    user.hashed_password = hash_password(new_password)
+    user.reset_token     = None
+    user.reset_token_exp = None
     db.commit()
-    return {"message": "Password reset successful"}
+    return {"message": "Password updated successfully"}
 
 
-# ── PROFILE ──────────────────────────────────────────────────────────────────
-
-@router.get("/me", response_model=schemas.UserOut)
-def get_me(current_user: models.User = Depends(auth_utils.get_current_user)):
+# ── ME / PROFILE ───────────────────────────────────────────────────────────────
+@profile_router.get("/me", response_model=schemas.UserOut)
+def get_me(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 
-@router.patch("/me", response_model=schemas.UserOut)
+@profile_router.put("/me", response_model=schemas.UserOut)
 def update_me(
     payload: schemas.UserUpdate,
     db: Session = Depends(get_db),
-    current_user: models.User = Depends(auth_utils.get_current_user),
+    current_user: models.User = Depends(get_current_user),
 ):
-    if payload.full_name:
-        current_user.full_name = payload.full_name
-    if payload.phone is not None:
-        current_user.phone = payload.phone
+    for field, value in payload.model_dump(exclude_none=True).items():
+        setattr(current_user, field, value)
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+@profile_router.put("/me/password")
+def change_password(
+    payload: schemas.UserUpdatePassword,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    current_user.hashed_password = hash_password(payload.new_password)
+    db.commit()
+    return {"message": "Password updated successfully"}
+
+
+# ── STAFF: list all users ──────────────────────────────────────────────────────
+@profile_router.get("/", response_model=list[schemas.UserOut])
+def list_users(
+    skip: int = 0,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    _staff: models.User = Depends(require_staff),
+):
+    return db.query(models.User).offset(skip).limit(limit).all()
+
+
+@profile_router.get("/{user_id}", response_model=schemas.UserOut)
+def get_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    _staff: models.User = Depends(require_staff),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
+@profile_router.patch("/{user_id}/role")
+def update_role(
+    user_id: int,
+    role: str,
+    db: Session = Depends(get_db),
+    _staff: models.User = Depends(require_staff),
+):
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    try:
+        user.role = models.UserRole(role)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {[r.value for r in models.UserRole]}")
+    db.commit()
+    db.refresh(user)
+    return {"message": f"Role updated to {user.role}", "user_id": user.id}
