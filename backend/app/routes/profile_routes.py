@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Header, Query
+from fastapi import APIRouter, HTTPException, Header
 from typing import Optional
 from app.schemas import UserProfileUpdate, StaffProfileUpdate, GetProfileSchema
 from app.database import query, execute
@@ -15,25 +15,6 @@ def get_user_from_token(authorization: Optional[str]) -> dict:
     return decode_token(token)
 
 
-def fetch_profile(user_id: str, role: str):
-    if role == "staff":
-        rows = query(
-            "SELECT id, full_name, email, phone, staff_id, department, created_at, updated_at FROM staff WHERE id = :id",
-            {"id": user_id},
-        )
-    else:
-        rows = query(
-            "SELECT id, full_name, email, phone, role, created_at, updated_at FROM profiles WHERE id = :id",
-            {"id": user_id},
-        )
-
-    if not rows:
-        raise HTTPException(404, "Profile not found")
-
-    profile = {k: str(v) if hasattr(v, "isoformat") else v for k, v in rows[0].items()}
-    return {"role": role, "profile": profile}
-
-
 # ══════════════════════════════════════════
 #  GET MY PROFILE
 # ══════════════════════════════════════════
@@ -44,36 +25,31 @@ async def get_my_profile(
 ):
     payload = get_user_from_token(authorization)
 
+    # Make sure token belongs to this user_id
     if payload.get("sub") != body.user_id:
         raise HTTPException(403, "Token does not match user")
 
     role = payload.get("role", "user")
 
     try:
-         return fetch_profile(body.user_id, role)
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(400, str(e))
+        if role == "staff":
+            rows = query(
+                "SELECT id, full_name, email, phone, staff_id, department, created_at, updated_at FROM staff WHERE id = :id",
+                {"id": body.user_id},
+            )
+        else:
+            rows = query(
+                "SELECT id, full_name, email, phone, role, created_at, updated_at FROM profiles WHERE id = :id",
+                {"id": body.user_id},
+            )
 
+        if not rows:
+            raise HTTPException(404, "Profile not found")
 
-# ══════════════════════════════════════════
-#  GET MY PROFILE (QUERY-BASED / BROWSER-FRIENDLY)
-# ══════════════════════════════════════════
-@router.get("/me")
-async def get_my_profile_get(
-    user_id: str = Query(..., description="Authenticated user ID"),
-    authorization: Optional[str] = Header(None),
-):
-    payload = get_user_from_token(authorization)
+        # Convert datetime objects to string for JSON
+        profile = {k: str(v) if hasattr(v, "isoformat") else v for k, v in rows[0].items()}
+        return {"role": role, "profile": profile}
 
-    if payload.get("sub") != user_id:
-        raise HTTPException(403, "Token does not match user")
-
-    role = payload.get("role", "user")
-
-    try:
-        return fetch_profile(user_id, role)
     except HTTPException:
         raise
     except Exception as e:

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { API } from "./api";
 import "./Auth.css";
 
@@ -95,7 +95,7 @@ export function ForgotPassword() {
 // ── RESET PASSWORD ─────────────────────────
 export function ResetPassword() {
   const navigate  = useNavigate();
-  const location  = useLocation();
+  const location  = useLocation_safe();
   const [token,       setToken]       = useState(location?.state?.token || "");
   const [newPassword, setNewPassword] = useState("");
   const [confirm,     setConfirm]     = useState("");
@@ -172,4 +172,16 @@ export function ResetPassword() {
       </div>
     </div>
   );
+}
+
+// Safe useLocation wrapper
+function useLocation_safe() {
+  try {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const { useLocation } = require("react-router-dom");
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    return useLocation();
+  } catch {
+    return null;
+  }
 }

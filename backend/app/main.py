@@ -7,31 +7,12 @@ from app.routes import auth_routes, profile_routes, flight_routes
 
 app = FastAPI(title="SkyLink AirWay API", version="3.0.0")
 
-
-def _build_allowed_origins() -> list[str]:
-    """Build CORS allowlist from env (comma-separated) plus local defaults."""
-    raw = os.getenv("FRONTEND_URL", "*").strip()
-    if raw == "*":
-        return ["*"]
-
-    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
-    defaults = [
-        "http://localhost:3000",
-        "https://skylinkairway-frontend.onrender.com",
-        "https://skylinkairway.onrender.com",
-    ]
-    for origin in defaults:
-        if origin not in origins:
-            origins.append(origin)
-    return origins
-
-
 # ── CORS ───────────────────────────────────
-allowed_origins = _build_allowed_origins()
+frontend_url = os.getenv("FRONTEND_URL", "*")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
-    allow_credentials=False if "*" in allowed_origins else True,
+    allow_origins=[frontend_url] if frontend_url != "*" else ["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
