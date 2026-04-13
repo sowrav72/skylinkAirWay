@@ -1,33 +1,34 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API } from "./api";
 import "./Auth.css";
-
-const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
 export default function Register() {
   const navigate = useNavigate();
   const [role, setRole] = useState("user");
   const [formData, setFormData] = useState({
     full_name: "", email: "", password: "", confirmPassword: "",
-    staff_id: "", department: "General", phone: "", agree: false,
+    staff_id: "", department: "General", phone: "",
+    agree: false,
   });
-  const [errors, setErrors]           = useState({});
-  const [loading, setLoading]         = useState(false);
+  const [errors,      setErrors]      = useState({});
+  const [loading,     setLoading]     = useState(false);
   const [serverError, setServerError] = useState("");
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
     setErrors({ ...errors, [name]: "" });
+    setServerError("");
   };
 
   const validate = () => {
     const e = {};
     if (!formData.full_name.trim()) e.full_name = "Full name is required";
     if (!formData.email)            e.email     = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email)) e.email = "Invalid email";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) e.email = "Invalid email format";
     if (!formData.password)         e.password  = "Password is required";
-    else if (formData.password.length < 6)       e.password = "Min 6 characters";
+    else if (formData.password.length < 6) e.password = "Min 6 characters";
     if (formData.password !== formData.confirmPassword)
       e.confirmPassword = "Passwords do not match";
     if (role === "staff" && !formData.staff_id.trim())
@@ -43,27 +44,32 @@ export default function Register() {
     if (Object.keys(errs).length) { setErrors(errs); return; }
 
     setLoading(true);
-    const endpoint = role === "staff" ? "/auth/register/staff" : "/auth/register/user";
-    const payload  = role === "staff"
-      ? { full_name: formData.full_name, email: formData.email, password: formData.password,
-          staff_id: formData.staff_id, department: formData.department, phone: formData.phone }
-      : { full_name: formData.full_name, email: formData.email, password: formData.password,
-          phone: formData.phone };
+
+    const endpoint = role === "staff"
+      ? "/auth/register/staff"
+      : "/auth/register/user";
+
+    const payload = role === "staff"
+      ? {
+          full_name:  formData.full_name,
+          email:      formData.email,
+          password:   formData.password,
+          staff_id:   formData.staff_id,
+          department: formData.department,
+          phone:      formData.phone || null,
+        }
+      : {
+          full_name: formData.full_name,
+          email:     formData.email,
+          password:  formData.password,
+          phone:     formData.phone || null,
+        };
 
     try {
-      const res  = await fetch(`${API}${endpoint}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Registration failed");
-
-      // Redirect to login with success message
+      await API.post(endpoint, payload);
       navigate("/login", {
-        state: { message: "Account created successfully! You can now sign in." }
+        state: { message: "Account created successfully! You can now sign in." },
       });
-
     } catch (err) {
       setServerError(err.message);
     } finally {
@@ -87,14 +93,16 @@ export default function Register() {
 
         {/* ROLE TOGGLE */}
         <div className="role-toggle">
-          <button type="button" className={`rtab${role === "user" ? " active" : ""}`} onClick={() => setRole("user")}>
+          <button type="button" className={`rtab${role === "user" ? " active" : ""}`}
+            onClick={() => setRole("user")}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
               <circle cx="12" cy="7" r="4"/>
             </svg>
             Passenger
           </button>
-          <button type="button" className={`rtab${role === "staff" ? " active" : ""}`} onClick={() => setRole("staff")}>
+          <button type="button" className={`rtab${role === "staff" ? " active" : ""}`}
+            onClick={() => setRole("staff")}>
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="2" y="7" width="20" height="14" rx="2"/>
               <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
@@ -123,8 +131,8 @@ export default function Register() {
             </div>
 
             <div className="form-group">
-              <label>Phone (optional)</label>
-              <input name="phone" type="tel" placeholder="+880 ..."
+              <label>Phone <span style={{fontWeight:300,opacity:.6}}>(optional)</span></label>
+              <input name="phone" type="tel" placeholder="+880 1234 567890"
                 value={formData.phone} onChange={handleChange} />
             </div>
 
@@ -144,7 +152,7 @@ export default function Register() {
               {errors.confirmPassword && <span className="error">{errors.confirmPassword}</span>}
             </div>
 
-            {/* STAFF ONLY */}
+            {/* STAFF ONLY FIELDS */}
             {role === "staff" && (
               <>
                 <div className="form-group">
@@ -172,7 +180,8 @@ export default function Register() {
 
           <div className="form-group checkbox-group">
             <label className="checkbox-label">
-              <input type="checkbox" name="agree" checked={formData.agree} onChange={handleChange} />
+              <input type="checkbox" name="agree"
+                checked={formData.agree} onChange={handleChange} />
               I agree to the Terms &amp; Conditions and Privacy Policy
             </label>
             {errors.agree && <span className="error">{errors.agree}</span>}
