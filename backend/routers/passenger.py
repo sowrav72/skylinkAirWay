@@ -24,10 +24,20 @@ router = APIRouter(prefix="/passenger", tags=["passenger"])
 
 # ── PROFILE MANAGEMENT ───────────────────────────────────────────────────────────
 
+@router.get("/test")
+def test_passenger_router():
+    """Test endpoint to verify passenger router is loaded"""
+    return {"message": "Passenger router is working!", "timestamp": datetime.now(timezone.utc).isoformat()}
+
 @router.get("/profile", response_model=UserProfileOut)
 def get_profile(current_user: User = Depends(get_current_user)):
     """Get current user's profile information"""
     return current_user
+
+@router.get("/profile-public")
+def get_profile_public():
+    """Public test endpoint - no auth required"""
+    return {"message": "Profile endpoint accessible", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 
 @router.put("/profile", response_model=UserProfileOut)

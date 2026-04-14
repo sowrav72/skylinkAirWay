@@ -173,7 +173,7 @@ app.include_router(auth_router)
 app.include_router(profile_router)
 app.include_router(flights.router)
 app.include_router(bookings.router)
-app.include_router(passenger.router)
+app.include_router(passenger_router)
 app.include_router(staff.router)
 
 
