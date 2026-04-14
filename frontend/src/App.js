@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
-import * as Icons from "./icons";
 import "./App.css";
 import Navbar from "./Navbar";
 import Login from "./Login";
@@ -14,14 +13,14 @@ import LazyImage from "./components/LazyImage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
-const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
-
-const tripTypes = ["One Way", "Round Trip", "Multi-City"];
-
 // ── IMPORT DATA ───────────────────────────────────────────────────────────────
 import destinations from "./data/destinations.json";
 import dealCategories from "./data/deals.json";
 import features from "./data/features.json";
+
+const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
+
+const tripTypes = ["One Way", "Round Trip", "Multi-City"];
 
 
 
