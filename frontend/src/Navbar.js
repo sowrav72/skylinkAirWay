@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AirplaneIcon, HomeIcon } from "./icons";
+import ThemeToggle from "./components/ThemeToggle";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -87,6 +88,9 @@ export default function Navbar() {
             </a>
           ))}
         </div>
+
+        {/* THEME TOGGLE */}
+        <ThemeToggle />
 
         {/* AUTH AREA */}
         <div className="nav-auth">

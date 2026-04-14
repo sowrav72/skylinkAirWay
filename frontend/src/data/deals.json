@@ -1,0 +1,194 @@
+[
+  {
+    "key": "flight-deals",
+    "label": "Flight Deals",
+    "icon": "✈️",
+    "offers": [
+      {
+        "route": "JFK → LHR",
+        "title": "New York to London",
+        "price": "$540",
+        "badge": "Best Value",
+        "cabin": "Economy",
+        "from": "JFK",
+        "to": "LHR",
+        "image": "url('https://images.unsplash.com/photo-1486325212027-8081e485255e?auto=format&fit=crop&w=800&q=80')"
+      },
+      {
+        "route": "SFO → NRT",
+        "title": "San Francisco to Tokyo",
+        "price": "$740",
+        "badge": "Popular",
+        "cabin": "Economy",
+        "from": "SFO",
+        "to": "NRT",
+        "image": "url('https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80')"
+      },
+      {
+        "route": "MIA → MAD",
+        "title": "Miami to Madrid",
+        "price": "$580",
+        "badge": "Limited",
+        "cabin": "Economy",
+        "from": "MIA",
+        "to": "MAD",
+        "image": "url('https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=800&q=80')"
+      }
+    ]
+  },
+  {
+    "key": "business-class",
+    "label": "Business Class",
+    "icon": "💼",
+    "offers": [
+      {
+        "route": "JFK → LHR",
+        "title": "NY London Business",
+        "price": "$1,240",
+        "badge": "Premium",
+        "cabin": "Business",
+        "from": "JFK",
+        "to": "LHR",
+        "image": "url('https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=800&q=80')"
+      },
+      {
+        "route": "LHR → DXB",
+        "title": "London Dubai Business",
+        "price": "$890",
+        "badge": "Luxury",
+        "cabin": "Business",
+        "from": "LHR",
+        "to": "DXB",
+        "image": "url('https://images.unsplash.com/photo-1578574577315-3fbeb0cecdc2?auto=format&fit=crop&w=800&q=80')"
+      },
+      {
+        "route": "JFK → NRT",
+        "title": "NY Tokyo Business",
+        "price": "$2,100",
+        "badge": "First Class",
+        "cabin": "Business",
+        "from": "JFK",
+        "to": "NRT",
+        "image": "url('https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=800&q=80')"
+      }
+    ]
+  },
+  {
+    "key": "holiday-packages",
+    "label": "Holiday Packages",
+    "icon": "🏖️",
+    "offers": [
+      {
+        "route": "DXB → SYD",
+        "title": "Dubai to Sydney",
+        "price": "$810",
+        "badge": "Holiday",
+        "cabin": "Economy",
+        "from": "DXB",
+        "to": "SYD",
+        "image": "url('https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=800&q=80')"
+      },
+      {
+        "route": "SIN → BKK",
+        "title": "Singapore to Bangkok",
+        "price": "$180",
+        "badge": "Weekend",
+        "cabin": "Economy",
+        "from": "SIN",
+        "to": "BKK",
+        "image": "url('https://images.unsplash.com/photo-1563492065599-3520f775eeed?auto=format&fit=crop&w=800&q=80')"
+      },
+      {
+        "route": "LHR → SIN",
+        "title": "London to Singapore",
+        "price": "$620",
+        "badge": "Asia Tour",
+        "cabin": "Economy",
+        "from": "LHR",
+        "to": "SIN",
+        "image": "url('https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=800&q=80')"
+      }
+    ]
+  },
+  {
+    "key": "loyalty-rewards",
+    "label": "Loyalty Rewards",
+    "icon": "⭐",
+    "offers": [
+      {
+        "route": "JFK → CDG",
+        "title": "NY Paris Premium",
+        "price": "$480",
+        "badge": "Members Only",
+        "cabin": "Economy",
+        "from": "JFK",
+        "to": "CDG",
+        "image": "url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1200&q=80')"
+      },
+      {
+        "route": "DXB → SIN",
+        "title": "Dubai to Singapore",
+        "price": "$420",
+        "badge": "Gold Member",
+        "cabin": "Economy",
+        "from": "DXB",
+        "to": "SIN",
+        "image": "url('https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=800&q=80')"
+      }
+    ]
+  },
+  {
+    "key": "student-fares",
+    "label": "Student Fares",
+    "icon": "🎓",
+    "offers": [
+      {
+        "route": "LHR → JFK",
+        "title": "London to New York",
+        "price": "$399",
+        "badge": "Student",
+        "cabin": "Economy",
+        "from": "LHR",
+        "to": "JFK",
+        "image": "url('https://images.unsplash.com/photo-1496588152823-86ff7695e68f?auto=format&fit=crop&w=800&q=80')"
+      },
+      {
+        "route": "SFO → CDG",
+        "title": "SF to Paris Study Abroad",
+        "price": "$599",
+        "badge": "Student Deal",
+        "cabin": "Economy",
+        "from": "SFO",
+        "to": "CDG",
+        "image": "url('https://images.unsplash.com/photo-1543332164-6e82f355badc?auto=format&fit=crop&w=800&q=80')"
+      }
+    ]
+  },
+  {
+    "key": "group-bookings",
+    "label": "Group Bookings",
+    "icon": "👥",
+    "offers": [
+      {
+        "route": "JFK → NRT",
+        "title": "Group NY Tokyo",
+        "price": "$820",
+        "badge": "Group 10+",
+        "cabin": "Economy",
+        "from": "JFK",
+        "to": "NRT",
+        "image": "url('https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=800&q=80')"
+      },
+      {
+        "route": "MIA → MAD",
+        "title": "Group Miami Madrid",
+        "price": "$520",
+        "badge": "Group Deal",
+        "cabin": "Economy",
+        "from": "MIA",
+        "to": "MAD",
+        "image": "url('https://images.unsplash.com/photo-1539037116277-4db20889f2d4?auto=format&fit=crop&w=800&q=80')"
+      }
+    ]
+  }
+]
