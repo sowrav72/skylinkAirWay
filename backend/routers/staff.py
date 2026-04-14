@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime, timezone
 from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, status, Query
@@ -17,10 +18,16 @@ from schemas import (
 )
 from auth import get_current_user, require_staff
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/staff", tags=["staff"])
 
 
 # ── DASHBOARD & ANALYTICS ───────────────────────────────────────────────────────
+
+@router.get("/test")
+def test_staff_router():
+    """Test endpoint to verify staff router is accessible"""
+    return {"message": "Staff router is working!", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 @router.get("/dashboard/stats", response_model=DashboardStats)
 def get_dashboard_stats(
@@ -62,18 +69,34 @@ def get_dashboard_stats(
                       UserRole.operations_manager, UserRole.admin])
     ).scalar()
 
-    return DashboardStats(
-        total_bookings=booking_stats.total or 0,
-        pending_bookings=booking_stats.pending or 0,
-        confirmed_bookings=booking_stats.confirmed or 0,
-        cancelled_bookings=booking_stats.cancelled or 0,
-        total_revenue=revenue_stats.total_revenue or 0,
-        today_revenue=revenue_stats.today_revenue or 0,
-        active_flights=flight_stats.scheduled or 0,
-        delayed_flights=flight_stats.delayed or 0,
-        available_seats=seat_stats.available_seats or 0,
-        staff_count=staff_count or 0
-    )
+    try:
+        return DashboardStats(
+            total_bookings=int(booking_stats.total or 0),
+            pending_bookings=int(booking_stats.pending or 0),
+            confirmed_bookings=int(booking_stats.confirmed or 0),
+            cancelled_bookings=int(booking_stats.cancelled or 0),
+            total_revenue=float(revenue_stats.total_revenue or 0),
+            today_revenue=float(revenue_stats.today_revenue or 0),
+            active_flights=int(flight_stats.scheduled or 0),
+            delayed_flights=int(flight_stats.delayed or 0),
+            available_seats=int(seat_stats.available_seats or 0),
+            staff_count=int(staff_count or 0)
+        )
+    except Exception as e:
+        # If there's any issue with the data, return zeros
+        logger.error(f"Error generating dashboard stats: {e}")
+        return DashboardStats(
+            total_bookings=0,
+            pending_bookings=0,
+            confirmed_bookings=0,
+            cancelled_bookings=0,
+            total_revenue=0.0,
+            today_revenue=0.0,
+            active_flights=0,
+            delayed_flights=0,
+            available_seats=0,
+            staff_count=0
+        )
 
 
 # ── FLIGHT MANAGEMENT ───────────────────────────────────────────────────────────

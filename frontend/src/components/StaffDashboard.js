@@ -15,53 +15,114 @@ function StaffDashboard() {
   const [users, setUsers] = useState([]);
   const [crew, setCrew] = useState([]);
   const [aircraft, setAircraft] = useState([]);
+  const [error, setError] = useState(null);
 
   const token = localStorage.getItem("skylink_token");
 
   const loadDashboardData = useCallback(async () => {
     try {
-      const [statsRes, flightsRes, bookingsRes, usersRes, crewRes, aircraftRes] = await Promise.all([
+      // Load critical data first (dashboard stats and flights)
+      const [statsRes, flightsRes] = await Promise.all([
         fetch(`${API}/staff/dashboard/stats`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
         fetch(`${API}/flights/?limit=50`, {
           headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/staff/bookings/search?limit=50`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/users/?limit=50`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/staff/crew/roster`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/staff/aircraft`, {
-          headers: { Authorization: `Bearer ${token}` }
         })
       ]);
 
-      const [statsData, flightsData, bookingsData, usersData, crewData, aircraftData] = await Promise.all([
+      console.log('Critical API responses:', {
+        stats: statsRes.status,
+        flights: flightsRes.status
+      });
+
+      if (!statsRes.ok) {
+        const errorText = await statsRes.text();
+        console.error('Dashboard stats error:', errorText);
+        throw new Error(`Failed to load dashboard stats: ${statsRes.status} - ${errorText}`);
+      }
+      if (!flightsRes.ok) {
+        const errorText = await flightsRes.text();
+        console.error('Flights error:', errorText);
+        throw new Error(`Failed to load flights: ${flightsRes.status} - ${errorText}`);
+      }
+
+      const [statsData, flightsData] = await Promise.all([
         statsRes.json(),
-        flightsRes.json(),
-        bookingsRes.json(),
-        usersRes.json(),
-        crewRes.json(),
-        aircraftRes.json()
+        flightsRes.json()
       ]);
 
       setDashboardStats(statsData);
       setFlights(flightsData.flights || []);
-      setBookings(bookingsData.bookings || []);
-      setUsers(usersData || []);
-      setCrew(crewData.crew || []);
-      setAircraft(aircraftData || []);
 
-      // Get current user info
+      // Get current user info first
       const userInfo = JSON.parse(localStorage.getItem("skylink_user"));
       setUser(userInfo);
+
+      // Load optional data (don't fail if these don't exist or user lacks permissions)
+      try {
+        const [bookingsRes, crewRes, aircraftRes] = await Promise.all([
+          fetch(`${API}/staff/bookings/search?limit=50`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(`${API}/staff/crew/roster`, {
+            headers: { Authorization: `Bearer ${token}` }
+          }),
+          fetch(`${API}/staff/aircraft`, {
+            headers: { Authorization: `Bearer ${token}` }
+          })
+        ]);
+
+        console.log('API responses:', {
+          bookings: bookingsRes.status,
+          crew: crewRes.status,
+          aircraft: aircraftRes.status
+        });
+
+        if (bookingsRes.ok) {
+          const bookingsData = await bookingsRes.json();
+          setBookings(bookingsData.bookings || []);
+        } else {
+          console.warn('Bookings API failed:', bookingsRes.status, await bookingsRes.text());
+        }
+
+        if (crewRes.ok) {
+          const crewData = await crewRes.json();
+          setCrew(crewData.crew || []);
+        } else {
+          console.warn('Crew API failed:', crewRes.status, await crewRes.text());
+        }
+
+        if (aircraftRes.ok) {
+          const aircraftData = await aircraftRes.json();
+          setAircraft(aircraftData || []);
+        } else {
+          console.warn('Aircraft API failed:', aircraftRes.status, await aircraftRes.text());
+        }
+
+        // Load users only if user is admin
+        if (userInfo?.role === 'admin') {
+          try {
+            const usersRes = await fetch(`${API}/users/?limit=50`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            if (usersRes.ok) {
+              const usersData = await usersRes.json();
+              setUsers(usersData || []);
+            }
+          } catch (usersError) {
+            console.warn("Could not load users (admin only):", usersError);
+          }
+        }
+      } catch (optionalError) {
+        console.warn("Some optional data failed to load:", optionalError);
+        // Don't fail the whole component for optional data
+      }
+
     } catch (error) {
       console.error("Error loading dashboard data:", error);
+      setError(error.message || "Failed to load dashboard data");
+      setUser(null); // This will show the error message
     } finally {
       setLoading(false);
     }
@@ -72,6 +133,22 @@ function StaffDashboard() {
       navigate("/login");
       return;
     }
+
+    // Check if user has staff privileges
+    const userInfo = JSON.parse(localStorage.getItem("skylink_user"));
+    const allowedRoles = ['agent', 'pilot', 'ground_crew', 'operations_manager', 'admin'];
+
+    console.log('Current user info:', userInfo);
+    console.log('User role:', userInfo?.role);
+    console.log('Allowed roles:', allowedRoles);
+
+    if (!userInfo || !allowedRoles.includes(userInfo.role)) {
+      console.error('User does not have staff privileges. Current role:', userInfo?.role, 'Allowed roles:', allowedRoles);
+      alert(`Access denied. Your current role (${userInfo?.role || 'none'}) does not have staff privileges. Redirecting to passenger profile.`);
+      navigate("/profile/user"); // Redirect to passenger profile
+      return;
+    }
+
     loadDashboardData();
   }, [token, loadDashboardData, navigate]);
 
@@ -131,7 +208,15 @@ function StaffDashboard() {
   }
 
   if (!user) {
-    return <div className="profile-error">Unable to load dashboard data.</div>;
+    return (
+      <div className="profile-error">
+        <h2>Unable to Load Dashboard</h2>
+        <p>{error || "Unable to load dashboard data. Please try refreshing the page."}</p>
+        <button onClick={() => window.location.reload()} className="btn-primary">
+          Refresh Page
+        </button>
+      </div>
+    );
   }
 
   return (
