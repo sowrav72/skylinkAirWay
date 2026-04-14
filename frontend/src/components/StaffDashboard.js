@@ -21,6 +21,14 @@ function StaffDashboard() {
 
   const loadDashboardData = useCallback(async () => {
     try {
+      // First test if staff router is accessible
+      const pingRes = await fetch(`${API}/staff/ping`);
+      console.log('Staff router ping:', pingRes.status);
+
+      if (!pingRes.ok) {
+        throw new Error(`Staff router not accessible: ${pingRes.status}`);
+      }
+
       // Load critical data first (dashboard stats and flights)
       const [statsRes, flightsRes] = await Promise.all([
         fetch(`${API}/staff/dashboard/stats`, {

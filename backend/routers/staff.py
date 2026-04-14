@@ -24,10 +24,25 @@ router = APIRouter(prefix="/staff", tags=["staff"])
 
 # ── DASHBOARD & ANALYTICS ───────────────────────────────────────────────────────
 
+@router.get("/ping")
+def ping_staff_router():
+    """Simple ping endpoint to test staff router accessibility"""
+    return {"status": "ok", "router": "staff", "timestamp": datetime.now(timezone.utc).isoformat()}
+
 @router.get("/test")
 def test_staff_router():
     """Test endpoint to verify staff router is accessible"""
     return {"message": "Staff router is working!", "timestamp": datetime.now(timezone.utc).isoformat()}
+
+@router.get("/test-auth")
+def test_staff_auth(current_user: User = Depends(require_staff)):
+    """Test endpoint that requires staff authentication"""
+    return {
+        "message": "Staff authentication working!",
+        "user": current_user.email,
+        "role": current_user.role.value,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
 
 @router.get("/dashboard/stats", response_model=DashboardStats)
 def get_dashboard_stats(

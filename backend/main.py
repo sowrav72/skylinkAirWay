@@ -11,8 +11,9 @@ from sqlalchemy.orm import Session
 from database import engine, Base, SessionLocal
 import models
 from auth import hash_password
-from routers import flights, bookings, staff
+from routers import flights, bookings
 from routers.passenger import router as passenger_router
+from routers.staff import router as staff_router
 from routers.users import router as auth_router, profile_router
 
 logging.basicConfig(level=logging.INFO)
@@ -174,7 +175,7 @@ app.include_router(profile_router)
 app.include_router(flights.router)
 app.include_router(bookings.router)
 app.include_router(passenger_router)
-app.include_router(staff.router)
+app.include_router(staff_router)
 
 
 # ── HEALTH ─────────────────────────────────────────────────────────────────────
