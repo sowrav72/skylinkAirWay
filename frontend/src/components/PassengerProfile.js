@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import "./Profile.css";
+import "../Profile.css";
 
 const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
