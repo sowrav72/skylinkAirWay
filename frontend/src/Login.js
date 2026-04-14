@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import * as Icons from "./icons";
 
 const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -36,7 +37,7 @@ export default function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card">
-        <div className="auth-logo">✈ Skylink <em>AirWay</em></div>
+        <div className="auth-logo"><Icons.AirplaneIcon /> Skylink <em>AirWay</em></div>
         <h2 className="auth-title">Welcome Back</h2>
         <p className="auth-sub">Sign in to manage your flights and bookings</p>
 

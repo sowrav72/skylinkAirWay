@@ -317,7 +317,7 @@ export function UserProfile() {
                     {b.flight && (
                       <div className="bc-route">
                         <span className="bc-code">{b.flight.origin_code}</span>
-                        <span className="bc-arrow">✈</span>
+                        <Icons.AirplaneIcon className="bc-arrow" />
                         <span className="bc-code">{b.flight.destination_code}</span>
                       </div>
                     )}

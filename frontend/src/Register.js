@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import * as Icons from "./icons";
 
 const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
@@ -100,7 +101,7 @@ export default function Register() {
   return (
     <div className="auth-page">
       <div className="auth-card auth-card--wide">
-        <div className="auth-logo">✈ Skylink <em>AirWay</em></div>
+        <div className="auth-logo"><Icons.AirplaneIcon /> Skylink <em>AirWay</em></div>
         <h2 className="auth-title">Create Account</h2>
         <p className="auth-sub">Join Skylink and start exploring the world</p>
 
