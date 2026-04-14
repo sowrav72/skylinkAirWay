@@ -47,10 +47,7 @@ export default function Navbar() {
   };
 
   const navLinks = [
-    { label: "Home", href: "/", icon: "🏠" },
-    { label: "Destinations", href: "/#destinations", icon: "🌍" },
-    { label: "Deals", href: "/#offers", icon: "🏷️" },
-    { label: "About", href: "/#about", icon: "ℹ️" },
+    { label: "Home", href: "/", icon: <HomeIcon /> },
   ];
 
   const initials = user
@@ -71,7 +68,7 @@ export default function Navbar() {
       <div className="nav-inner">
         {/* LOGO */}
         <Link to="/" className="nav-logo" onClick={() => setMenuOpen(false)}>
-          <span className="logo-icon">✈</span>
+          <AirplaneIcon className="logo-icon" />
           Skylink <em>AirWay</em>
         </Link>
 

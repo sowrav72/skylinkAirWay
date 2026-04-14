@@ -90,7 +90,7 @@ export default function Register() {
 
       localStorage.setItem("skylink_token", data.access_token);
       localStorage.setItem("skylink_user", JSON.stringify(data.user));
-      navigate(data.user.role === "passenger" ? "/" : "/profile/staff");
+      navigate(data.user.role === "passenger" ? "/profile/user" : "/profile/staff");
     } catch (err) {
       setError(err.message);
     } finally {
