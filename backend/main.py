@@ -11,7 +11,8 @@ from sqlalchemy.orm import Session
 from database import engine, Base, SessionLocal
 import models
 from auth import hash_password
-from routers import flights, bookings, staff, passenger
+from routers import flights, bookings, staff
+from routers.passenger import router as passenger_router
 from routers.users import router as auth_router, profile_router
 
 logging.basicConfig(level=logging.INFO)
