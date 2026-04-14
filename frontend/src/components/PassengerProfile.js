@@ -191,6 +191,7 @@ function PassengerProfile() {
               editData={editData}
               setEditData={setEditData}
               handleProfileUpdate={handleProfileUpdate}
+              setActiveTab={setActiveTab}
             />
           )}
 
@@ -227,7 +228,7 @@ function PassengerProfile() {
 }
 
 // Overview Tab Component
-function OverviewTab({ user, bookings, loyaltyData, analytics, editing, setEditing, editData, setEditData, handleProfileUpdate }) {
+function OverviewTab({ user, bookings, loyaltyData, analytics, editing, setEditing, editData, setEditData, handleProfileUpdate, setActiveTab }) {
   const recentBookings = bookings.slice(0, 3);
   const totalMiles = analytics.find(a => a.metric_type === 'total_miles')?.metric_value || 0;
   const totalSpent = analytics.find(a => a.metric_type === 'total_spent')?.metric_value || 0;
