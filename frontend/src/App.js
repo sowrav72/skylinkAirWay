@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
+import * as Icons from "./icons";
 import "./App.css";
 import Navbar from "./Navbar";
 import Login from "./Login";
