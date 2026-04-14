@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import * as Icons from "./icons";
 
 const API = process.env.REACT_APP_API_URL || "http://localhost:8000";
 
