@@ -12,6 +12,8 @@ import FlightResults from "./components/FlightResults";
 import LazyImage from "./components/LazyImage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import PassengerProfile from "./components/PassengerProfile";
+import StaffDashboard from "./components/StaffDashboard";
 
 // ── IMPORT DATA ───────────────────────────────────────────────────────────────
 import destinations from "./data/destinations.json";
@@ -573,15 +575,15 @@ export default function App() {
       <ThemeProvider>
         <div className="app-shell">
           <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/profile/user" element={<UserProfile />} />
-            <Route path="/profile/staff" element={<StaffProfile />} />
-          </Routes>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/profile/user" element={<PassengerProfile />} />
+          <Route path="/profile/staff" element={<StaffDashboard />} />
+        </Routes>
         </div>
       </ThemeProvider>
     </ErrorBoundary>

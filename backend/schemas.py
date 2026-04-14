@@ -208,3 +208,349 @@ class BookingOut(BaseModel):
 
 class BookingCancel(BaseModel):
     booking_ref: str
+
+
+# ── PASSENGER PROFILE SCHEMAS ─────────────────────────────────────────────────────
+
+class UserProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    passport_number: Optional[str] = None
+    nationality: Optional[str] = None
+    date_of_birth: Optional[str] = None  # YYYY-MM-DD
+    profile_photo_url: Optional[str] = None
+
+
+class UserProfileOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    email: str
+    full_name: str
+    phone: Optional[str] = None
+    passport_number: Optional[str] = None
+    nationality: Optional[str] = None
+    date_of_birth: Optional[str] = None
+    profile_photo_url: Optional[str] = None
+    role: str
+    employee_id: Optional[str] = None
+    phone_verified: bool
+    email_verified: bool
+    last_login_at: Optional[datetime] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class PaymentMethodCreate(BaseModel):
+    payment_type: str
+    card_type: Optional[str] = None
+    last4_digits: Optional[str] = None
+    expiry_month: Optional[int] = None
+    expiry_year: Optional[int] = None
+    billing_email: Optional[EmailStr] = None
+    mobile_number: Optional[str] = None
+    is_default: bool = False
+
+
+class PaymentMethodOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    payment_type: str
+    card_type: Optional[str] = None
+    last4_digits: Optional[str] = None
+    expiry_month: Optional[int] = None
+    expiry_year: Optional[int] = None
+    billing_email: Optional[str] = None
+    mobile_number: Optional[str] = None
+    is_default: bool
+    created_at: datetime
+    updated_at: datetime
+
+
+class BookingAddonCreate(BaseModel):
+    addon_type: str
+    addon_details: Optional[dict] = None
+    price: Decimal
+
+
+class BookingAddonOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    booking_ref: str
+    addon_type: str
+    addon_details: Optional[dict] = None
+    price: Decimal
+    created_at: datetime
+
+
+class SeatSelectionRequest(BaseModel):
+    seat_number: str
+    seat_class: str
+    row_number: Optional[int] = None
+    seat_letter: Optional[str] = None
+    is_paid_upgrade: bool = False
+    upgrade_cost: Optional[Decimal] = None
+
+
+class SeatSelectionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    booking_ref: str
+    seat_number: str
+    seat_class: str
+    row_number: Optional[int] = None
+    seat_letter: Optional[str] = None
+    is_paid_upgrade: bool
+    upgrade_cost: Optional[Decimal] = None
+    selected_at: datetime
+
+
+class LoyaltyPointOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    points: int
+    points_earned: int
+    points_redeemed: int
+    source: str
+    related_booking_ref: Optional[str] = None
+    expiry_date: Optional[str] = None
+    created_at: datetime
+
+
+class LoyaltyTierOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    tier_name: str
+    tier_level: int
+    points_threshold: int
+    benefits: List[str]
+    assigned_at: datetime
+    updated_at: datetime
+
+
+class UserBadgeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    badge_name: str
+    badge_description: Optional[str] = None
+    badge_icon_url: Optional[str] = None
+    badge_category: Optional[str] = None
+    earned_at: datetime
+
+
+class SupportTicketCreate(BaseModel):
+    subject: str
+    message: str
+    priority: str = "normal"
+
+
+class SupportTicketOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    ticket_number: str
+    subject: str
+    message: str
+    status: str
+    priority: str
+    assigned_to_staff: Optional[int] = None
+    response_count: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class SupportMessageCreate(BaseModel):
+    message: str
+    attachments: Optional[List[dict]] = None
+    is_internal: bool = False
+
+
+class SupportMessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    sender_role: str
+    sender_id: int
+    message: str
+    attachments: List[dict]
+    is_internal: bool
+    created_at: datetime
+
+
+class TravelAnalyticsOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    metric_type: str
+    metric_value: Decimal
+    period: str
+    updated_at: datetime
+
+
+class UserNotificationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    notification_type: str
+    title: str
+    message: str
+    data: dict
+    is_read: bool
+    read_at: Optional[datetime] = None
+    created_at: datetime
+
+
+class UserPreferenceUpdate(BaseModel):
+    preference_value: dict
+
+
+class UserPreferenceOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    preference_key: str
+    preference_value: dict
+    created_at: datetime
+    updated_at: datetime
+
+
+# ── STAFF PROFILE SCHEMAS ─────────────────────────────────────────────────────────
+
+class CrewMemberCreate(BaseModel):
+    employee_id: str
+    role: str
+    license_number: Optional[str] = None
+    certifications: Optional[List[str]] = None
+    base_location: Optional[str] = None
+    hire_date: Optional[str] = None  # YYYY-MM-DD
+
+
+class CrewMemberOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    employee_id: str
+    role: str
+    license_number: Optional[str] = None
+    certifications: List[str]
+    base_location: Optional[str] = None
+    hire_date: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+    updated_at: datetime
+    user: Optional[UserProfileOut] = None
+
+
+class CrewAssignmentCreate(BaseModel):
+    crew_member_id: int
+    flight_id: int
+    role_in_flight: str
+
+
+class CrewAssignmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    crew_member_id: int
+    flight_id: int
+    role_in_flight: str
+    assigned_by: int
+    assigned_at: datetime
+    crew_member: Optional[CrewMemberOut] = None
+
+
+class AircraftInventoryCreate(BaseModel):
+    aircraft_type: str
+    registration_number: str
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
+    total_seats: int
+    economy_seats: int
+    business_seats: int = 0
+    first_class_seats: int = 0
+    range_km: Optional[int] = None
+    max_speed_kmh: Optional[int] = None
+    last_maintenance: Optional[str] = None  # YYYY-MM-DD
+    next_maintenance: Optional[str] = None  # YYYY-MM-DD
+    purchase_date: Optional[str] = None     # YYYY-MM-DD
+
+
+class AircraftInventoryOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    aircraft_type: str
+    registration_number: str
+    manufacturer: Optional[str] = None
+    model: Optional[str] = None
+    total_seats: int
+    economy_seats: int
+    business_seats: int
+    first_class_seats: int
+    range_km: Optional[int] = None
+    max_speed_kmh: Optional[int] = None
+    status: str
+    last_maintenance: Optional[str] = None
+    next_maintenance: Optional[str] = None
+    purchase_date: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class SeatMapCreate(BaseModel):
+    aircraft_type: str
+    seat_configuration: dict
+
+
+class SeatMapOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    aircraft_type: str
+    seat_configuration: dict
+    created_by: int
+    created_at: datetime
+    updated_at: datetime
+
+
+class StaffActivityLogOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    staff_user_id: int
+    action: str
+    resource_type: str
+    resource_id: Optional[int] = None
+    details: dict
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    created_at: datetime
+
+
+# ── DASHBOARD SCHEMAS ───────────────────────────────────────────────────────────
+
+class DashboardStats(BaseModel):
+    total_bookings: int
+    pending_bookings: int
+    confirmed_bookings: int
+    cancelled_bookings: int
+    total_revenue: Decimal
+    today_revenue: Decimal
+    active_flights: int
+    delayed_flights: int
+    available_seats: int
+    staff_count: int
+
+
+class NotificationCreate(BaseModel):
+    user_id: int
+    notification_type: str
+    title: str
+    message: str
+    data: Optional[dict] = None
