@@ -85,7 +85,7 @@ export default function Navbar() {
               onClick={l.href === "/" ? undefined : undefined}
             >
               {l.label}
-              {isActive(l.href) && <span className="nav-link-dot" />}
+              {isActive(l.href) && <div className="nav-link-bar" />}
             </a>
           ))}
         </div>

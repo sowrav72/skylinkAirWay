@@ -88,10 +88,11 @@ NAVBAR
 }
 .nav-link:hover { background: rgba(255,255,255,.12); color: #fff; }
 .nav-link--active { color: #fff; background: rgba(255,255,255,.12); }
-.nav-link-dot {
-  width: 4px; height: 4px; border-radius: 50%; background: var(--accent);
-  position: absolute; bottom: 4px;
+.nav-link-bar {
+  height: 2px; background: linear-gradient(90deg, var(--accent), #22c55e); 
+  border-radius: 2px; margin-top: 4px; width: 24px; animation: barGrow .4s ease;
 }
+@keyframes barGrow { from { width: 0; } }
 .nav-auth { display: flex; align-items: center; gap: .65rem; margin-left: auto; }
 .nav-btn-ghost {
   color: rgba(255,255,255,.88); font-size: .875rem; font-weight: 500;
