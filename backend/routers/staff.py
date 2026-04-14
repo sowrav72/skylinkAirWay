@@ -1,13 +1,13 @@
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List, Optional, Dict
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import func, desc, and_, or_
+from sqlalchemy import func, desc, or_
 
 from database import get_db
 from models import (
     User, Flight, Booking, CrewMember, CrewAssignment, AircraftInventory,
-    SeatMap, StaffActivityLog, UserNotification, UserRole
+    SeatMap, StaffActivityLog, UserNotification, UserRole, Airport
 )
 from schemas import (
     FlightCreate, FlightOut, BookingOut, CrewMemberCreate, CrewMemberOut,
@@ -86,11 +86,11 @@ def create_flight(
 ):
     """Create a new flight"""
     # Validate airports
-    origin = db.query(models.Airport).filter(models.Airport.code == flight_data.origin_code).first()
+    origin = db.query(Airport).filter(Airport.code == flight_data.origin_code).first()
     if not origin:
         raise HTTPException(status_code=404, detail=f"Origin airport '{flight_data.origin_code}' not found")
 
-    destination = db.query(models.Airport).filter(models.Airport.code == flight_data.destination_code).first()
+    destination = db.query(Airport).filter(Airport.code == flight_data.destination_code).first()
     if not destination:
         raise HTTPException(status_code=404, detail=f"Destination airport '{flight_data.destination_code}' not found")
 
@@ -120,7 +120,7 @@ def create_flight(
     return flight
 
 
-@router.put("/flights/{flight_id}/status")
+@router.put("/flights/{flight_id}/status", response_model=Dict[str, str])
 def update_flight_status(
     flight_id: int,
     status: str,
@@ -148,7 +148,7 @@ def update_flight_status(
 
 # ── BOOKING ADMINISTRATION ──────────────────────────────────────────────────────
 
-@router.get("/bookings/search")
+@router.get("/bookings/search", response_model=dict)
 def search_bookings(
     query: str = Query(..., description="Search query (booking ref, passenger name, flight number)"),
     status_filter: Optional[str] = Query(None, description="Filter by booking status"),
@@ -302,7 +302,7 @@ def assign_crew_to_flight(
     return assignment
 
 
-@router.get("/crew/roster")
+@router.get("/crew/roster", response_model=dict)
 def get_crew_roster(
     active_only: bool = Query(True, description="Show only active crew members"),
     db: Session = Depends(get_db),
@@ -403,7 +403,7 @@ def create_seat_map(
 
 # ── REPORTING & ANALYTICS ───────────────────────────────────────────────────────
 
-@router.get("/reports/revenue")
+@router.get("/reports/revenue", response_model=dict)
 def get_revenue_report(
     start_date: str = Query(..., description="Start date (YYYY-MM-DD)"),
     end_date: str = Query(..., description="End date (YYYY-MM-DD)"),
@@ -455,7 +455,7 @@ def get_revenue_report(
     }
 
 
-@router.get("/reports/flights")
+@router.get("/reports/flights", response_model=dict)
 def get_flight_performance_report(
     start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
@@ -510,7 +510,7 @@ def get_activity_log(
 
 # ── NOTIFICATION MANAGEMENT ─────────────────────────────────────────────────────
 
-@router.post("/notifications", status_code=status.HTTP_201_CREATED)
+@router.post("/notifications", response_model=dict, status_code=status.HTTP_201_CREATED)
 def send_notification(
     notification_data: NotificationCreate,
     db: Session = Depends(get_db),

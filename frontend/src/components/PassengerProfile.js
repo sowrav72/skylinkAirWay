@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../Profile.css";
 
@@ -22,15 +22,7 @@ function PassengerProfile() {
 
   const token = localStorage.getItem("skylink_token");
 
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    loadUserData();
-  }, []);
-
-  const loadUserData = async () => {
+  const loadUserData = useCallback(async () => {
     try {
       // Load critical data first (user profile and bookings)
       const [userRes, bookingsRes] = await Promise.all([
@@ -86,7 +78,15 @@ function PassengerProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    loadUserData();
+  }, [token, loadUserData, navigate]);
 
   const handleProfileUpdate = async () => {
     try {

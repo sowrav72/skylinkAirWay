@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "../Profile.css";
 
@@ -15,19 +15,10 @@ function StaffDashboard() {
   const [users, setUsers] = useState([]);
   const [crew, setCrew] = useState([]);
   const [aircraft, setAircraft] = useState([]);
-  const [reports, setReports] = useState(null);
 
   const token = localStorage.getItem("skylink_token");
 
-  useEffect(() => {
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       const [statsRes, flightsRes, bookingsRes, usersRes, crewRes, aircraftRes] = await Promise.all([
         fetch(`${API}/staff/dashboard/stats`, {
@@ -74,7 +65,15 @@ function StaffDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+    loadDashboardData();
+  }, [token, loadDashboardData, navigate]);
 
   const updateFlightStatus = async (flightId, newStatus) => {
     try {

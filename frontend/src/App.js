@@ -1,13 +1,11 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo, memo } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useCallback, useMemo, memo } from "react";
+import { Routes, Route } from "react-router-dom";
 import "./App.css";
 import Navbar from "./Navbar";
 import Login from "./Login";
 import Register from "./Register";
 import { ForgotPassword, ResetPassword } from "./ResetPassword";
-import { UserProfile, StaffProfile } from "./Profile";
 import AirportDropdown from "./components/AirportDropdown";
-import BookingModal from "./components/BookingModal";
 import FlightResults from "./components/FlightResults";
 import LazyImage from "./components/LazyImage";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -48,8 +46,7 @@ const Home = memo(function Home() {
   const [searchErr, setSearchErr] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
-  // For deal offer quick search
-  const [offerModal, setOfferModal] = useState(null);
+
 
   useEffect(() => {
     fetch(`${API}/health`)
@@ -176,7 +173,7 @@ const Home = memo(function Home() {
 
   const currentDeals = useMemo(() =>
     dealCategories[activeDeal]?.offers || [],
-    [dealCategories, activeDeal]
+    [activeDeal]
   );
 
   return (
