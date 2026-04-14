@@ -8,6 +8,7 @@ function PassengerProfile() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [bookings, setBookings] = useState([]);
   const [loyaltyData, setLoyaltyData] = useState(null);
@@ -31,54 +32,57 @@ function PassengerProfile() {
 
   const loadUserData = async () => {
     try {
-      const [userRes, bookingsRes, loyaltyRes, notificationsRes, paymentsRes, ticketsRes, analyticsRes, prefsRes] = await Promise.all([
+      // Load critical data first (user profile and bookings)
+      const [userRes, bookingsRes] = await Promise.all([
         fetch(`${API}/passenger/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch(`${API}/bookings/my-bookings`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/passenger/loyalty/tier`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/passenger/notifications`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/passenger/payment-methods`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/passenger/support/tickets`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/passenger/analytics`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch(`${API}/passenger/preferences`, {
+        fetch(`${API}/bookings/my`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
 
-      const [userData, bookingsData, loyaltyData, notificationsData, paymentsData, ticketsData, analyticsData, prefsData] = await Promise.all([
+      if (!userRes.ok) {
+        throw new Error(`Failed to load user profile: ${userRes.status}`);
+      }
+      if (!bookingsRes.ok) {
+        throw new Error(`Failed to load bookings: ${bookingsRes.status}`);
+      }
+
+      const [userData, bookingsData] = await Promise.all([
         userRes.json(),
-        bookingsRes.json(),
-        loyaltyRes.json(),
-        notificationsRes.json(),
-        paymentsRes.json(),
-        ticketsRes.json(),
-        analyticsRes.json(),
-        prefsRes.json()
+        bookingsRes.json()
       ]);
 
       setUser(userData);
       setBookings(bookingsData.bookings || []);
-      setLoyaltyData(loyaltyData);
-      setNotifications(notificationsData);
-      setPaymentMethods(paymentsData);
-      setSupportTickets(ticketsData);
-      setAnalytics(analyticsData);
-      setPreferences(prefsData);
+
+      // Load optional data (don't fail if these don't exist yet)
+      try {
+        const [loyaltyRes, notificationsRes, paymentsRes, ticketsRes, analyticsRes, prefsRes] = await Promise.all([
+          fetch(`${API}/passenger/loyalty/tier`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/passenger/notifications`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/passenger/payment-methods`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/passenger/support/tickets`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/passenger/analytics`, { headers: { Authorization: `Bearer ${token}` } }),
+          fetch(`${API}/passenger/preferences`, { headers: { Authorization: `Bearer ${token}` } })
+        ]);
+
+        if (loyaltyRes.ok) setLoyaltyData(await loyaltyRes.json());
+        if (notificationsRes.ok) setNotifications(await notificationsRes.json());
+        if (paymentsRes.ok) setPaymentMethods(await paymentsRes.json());
+        if (ticketsRes.ok) setSupportTickets(await ticketsRes.json());
+        if (analyticsRes.ok) setAnalytics(await analyticsRes.json());
+        if (prefsRes.ok) setPreferences(await prefsRes.json());
+      } catch (optionalError) {
+        console.warn("Some optional data failed to load:", optionalError);
+        // Don't fail the whole component for optional data
+      }
+
     } catch (error) {
       console.error("Error loading user data:", error);
+      setError(error.message || "Failed to load profile data");
+      setUser(null); // This will show the error message
     } finally {
       setLoading(false);
     }
@@ -129,7 +133,15 @@ function PassengerProfile() {
   }
 
   if (!user) {
-    return <div className="profile-error">Unable to load profile data.</div>;
+    return (
+      <div className="profile-error">
+        <h2>Unable to Load Profile</h2>
+        <p>{error || "Unable to load profile data. Please try refreshing the page."}</p>
+        <button onClick={() => window.location.reload()} className="btn-primary">
+          Refresh Page
+        </button>
+      </div>
+    );
   }
 
   return (

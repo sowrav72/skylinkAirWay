@@ -188,7 +188,7 @@ def get_loyalty_tier(
             tier_name="Standard",
             tier_level=1,
             points_threshold=0,
-            benefits=[]
+            benefits=["Priority boarding", "Extra baggage allowance"]
         )
         db.add(tier)
         db.commit()
@@ -349,10 +349,51 @@ def get_travel_analytics(
     current_user: User = Depends(get_current_user)
 ):
     """Get user's travel analytics"""
-    return db.query(TravelAnalytics).filter(
+    analytics = db.query(TravelAnalytics).filter(
         TravelAnalytics.user_id == current_user.id,
         TravelAnalytics.period == period
     ).all()
+
+    # If no analytics exist, create default entries
+    if not analytics:
+        # Calculate from actual bookings
+        bookings = db.query(Booking).filter(
+            Booking.user_id == current_user.id,
+            Booking.status.in_(['confirmed', 'completed'])
+        ).all()
+
+        total_spent = sum(float(b.total_price) for b in bookings)
+        total_bookings = len(bookings)
+
+        # Create analytics entries
+        analytics_data = [
+            TravelAnalytics(
+                user_id=current_user.id,
+                metric_type="total_spent",
+                metric_value=total_spent,
+                period=period
+            ),
+            TravelAnalytics(
+                user_id=current_user.id,
+                metric_type="total_bookings",
+                metric_value=total_bookings,
+                period=period
+            ),
+            TravelAnalytics(
+                user_id=current_user.id,
+                metric_type="total_miles",
+                metric_value=0,  # Would need to calculate from flight distances
+                period=period
+            )
+        ]
+
+        for analytic in analytics_data:
+            db.add(analytic)
+        db.commit()
+
+        analytics = analytics_data
+
+    return analytics
 
 
 # ── NOTIFICATIONS ───────────────────────────────────────────────────────────────
@@ -427,9 +468,42 @@ def get_user_preferences(
     current_user: User = Depends(get_current_user)
 ):
     """Get user's preferences"""
-    return db.query(UserPreference).filter(
+    preferences = db.query(UserPreference).filter(
         UserPreference.user_id == current_user.id
     ).all()
+
+    # If no preferences exist, create defaults
+    if not preferences:
+        default_prefs = [
+            UserPreference(
+                user_id=current_user.id,
+                preference_key="theme",
+                preference_value="light"
+            ),
+            UserPreference(
+                user_id=current_user.id,
+                preference_key="notifications",
+                preference_value={"email": True, "sms": False, "push": True}
+            ),
+            UserPreference(
+                user_id=current_user.id,
+                preference_key="accessibility",
+                preference_value={"high_contrast": False, "screen_reader": False}
+            ),
+            UserPreference(
+                user_id=current_user.id,
+                preference_key="default_cabin",
+                preference_value="Economy"
+            )
+        ]
+
+        for pref in default_prefs:
+            db.add(pref)
+        db.commit()
+
+        preferences = default_prefs
+
+    return preferences
 
 
 @router.put("/preferences/{preference_key}", response_model=UserPreferenceOut)
