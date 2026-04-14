@@ -11,10 +11,15 @@ from sqlalchemy.orm import Session
 from database import engine, Base, SessionLocal
 import models
 from auth import hash_password
-from routers import flights, bookings
-from routers.passenger import router as passenger_router
-from routers.staff import router as staff_router
-from routers.users import router as auth_router, profile_router
+try:
+    from routers import flights, bookings
+    from routers.passenger import router as passenger_router
+    from routers.staff import router as staff_router
+    from routers.users import router as auth_router, profile_router
+    logger.info("All routers imported successfully")
+except ImportError as e:
+    logger.error(f"Failed to import routers: {e}")
+    raise
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -170,18 +175,33 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 # ── ROUTERS ────────────────────────────────────────────────────────────────────
-app.include_router(auth_router)
-app.include_router(profile_router)
-app.include_router(flights.router)
-app.include_router(bookings.router)
-app.include_router(passenger_router)
-app.include_router(staff_router)
+logger.info("Registering routers...")
+app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(profile_router, prefix="/users", tags=["users"])
+app.include_router(flights.router, prefix="/flights", tags=["flights"])
+app.include_router(bookings.router, prefix="/bookings", tags=["bookings"])
+app.include_router(passenger_router, prefix="/passenger", tags=["passenger"])
+app.include_router(staff_router, prefix="/staff", tags=["staff"])
+logger.info("All routers registered successfully")
 
 
 # ── HEALTH ─────────────────────────────────────────────────────────────────────
 @app.get("/health", tags=["health"])
 def health():
-    return {"status": "ok", "service": "Skylink AirWay API"}
+    routers_status = {
+        "auth": len(auth_router.routes),
+        "users": len(profile_router.routes),
+        "flights": len(flights.router.routes),
+        "bookings": len(bookings.router.routes),
+        "passenger": len(passenger_router.routes),
+        "staff": len(staff_router.routes)
+    }
+    return {
+        "status": "ok",
+        "service": "Skylink AirWay API",
+        "routers": routers_status,
+        "total_routes": sum(routers_status.values())
+    }
 
 
 @app.get("/", tags=["health"])
