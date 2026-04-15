@@ -44,7 +44,6 @@ const AirportDropdown = memo(function AirportDropdown({ label, value, onChange, 
         role="combobox"
         aria-expanded={open}
         aria-haspopup="listbox"
-        aria-controls={`airport-dropdown-${label.toLowerCase().replace(/\s+/g, '-')}-list`}
         aria-describedby={`airport-dropdown-${label.toLowerCase().replace(/\s+/g, '-')}-help`}
       >
         {selected ? (
@@ -71,7 +70,7 @@ const AirportDropdown = memo(function AirportDropdown({ label, value, onChange, 
         </svg>
       </div>
       {open && (
-        <div className="dd-panel" role="listbox" aria-label={`${label} options`} id={`airport-dropdown-${label.toLowerCase().replace(/\s+/g, '-')}-list`}>
+        <div className="dd-panel" role="listbox" aria-label={`${label} options`}>
           <div className="dd-search-wrap">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#5a7a9e" strokeWidth="2" aria-hidden="true">
               <circle cx="11" cy="11" r="8" />

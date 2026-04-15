@@ -1,7 +1,6 @@
 {
   "name": "skylink-frontend",
   "version": "1.0.0",
-  "description": "SkyLink AirWay - Airline Management System Frontend",
   "private": true,
   "dependencies": {
     "react": "^18.3.1",
@@ -18,12 +17,6 @@
   "eslintConfig": {
     "extends": ["react-app"]
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sowrav72/skylinkAirWay.git"
-  },
-  "author": "SkyLink AirWay Team",
-  "license": "MIT",
   "browserslist": {
     "production": [">0.2%", "not dead", "not op_mini all"],
     "development": ["last 1 chrome version", "last 1 firefox version", "last 1 safari version"]
