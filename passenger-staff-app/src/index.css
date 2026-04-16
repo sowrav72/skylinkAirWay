@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-navy-950 text-white font-body antialiased;
+    background-image: 
+      radial-gradient(ellipse at 20% 50%, rgba(20,44,94,0.4) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(12,28,68,0.3) 0%, transparent 50%);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3 {
+    @apply font-display;
+  }
+
+  ::selection {
+    @apply bg-gold-500 text-navy-950;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-navy-900;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-navy-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gold-600;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-navy-950 font-semibold rounded-lg
+           transition-all duration-300 hover:shadow-gold-lg hover:scale-[1.02] active:scale-[0.98]
+           font-body text-sm tracking-wide;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-medium rounded-lg
+           transition-all duration-300 hover:border-gold-400 hover:text-gold-400 hover:bg-white/5
+           font-body text-sm;
+  }
+
+  .btn-outline-gold {
+    @apply inline-flex items-center gap-2 px-6 py-3 border border-gold-500 text-gold-400 font-medium rounded-lg
+           transition-all duration-300 hover:bg-gold-500 hover:text-navy-950
+           font-body text-sm;
+  }
+
+  .card-glass {
+    @apply bg-glass backdrop-blur-md border border-white/10 rounded-2xl shadow-glass;
+  }
+
+  .card-navy {
+    @apply bg-card-gradient border border-white/8 rounded-2xl shadow-navy;
+  }
+
+  .input-field {
+    @apply w-full bg-navy-800/60 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-white/40
+           font-body text-sm transition-all duration-200
+           focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 focus:bg-navy-800/80;
+  }
+
+  .label {
+    @apply block text-xs font-medium text-white/60 uppercase tracking-widest mb-2 font-body;
+  }
+
+  .section-title {
+    @apply font-display text-3xl md:text-4xl font-light text-white;
+  }
+
+  .gold-text {
+    @apply text-transparent bg-clip-text bg-gold-gradient;
+  }
+
+  .divider-gold {
+    @apply w-12 h-px bg-gold-gradient my-3;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium font-body;
+  }
+
+  .badge-green {
+    @apply badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/25;
+  }
+
+  .badge-yellow {
+    @apply badge bg-amber-500/15 text-amber-400 border border-amber-500/25;
+  }
+
+  .badge-red {
+    @apply badge bg-red-500/15 text-red-400 border border-red-500/25;
+  }
+
+  .badge-blue {
+    @apply badge bg-blue-500/15 text-blue-400 border border-blue-500/25;
+  }
+
+  .nav-link {
+    @apply relative text-white/70 hover:text-white transition-colors duration-200 text-sm font-medium font-body
+           after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-gold-400
+           after:transition-all after:duration-300 hover:after:w-full;
+  }
+
+  .page-enter {
+    animation: fadeUp 0.5s ease forwards;
+  }
+
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
+
+  .shimmer-skeleton {
+    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.8s infinite;
+  }
+}
+
+/* Noise texture overlay for depth */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+}
