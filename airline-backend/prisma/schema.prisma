@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(passenger)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  bookings      Booking[]
+  notifications Notification[]
+  staffFlights  StaffFlight[]
+
+  @@map("users")
+}
+
+enum Role {
+  passenger
+  staff
+  admin
+}
+
+model Flight {
+  id            Int      @id @default(autoincrement())
+  origin        String
+  destination   String
+  departureTime DateTime @map("departure_time")
+  arrivalTime   DateTime @map("arrival_time")
+  totalSeats    Int      @map("total_seats")
+  price         Decimal
+  status        FlightStatus @default(ON_TIME)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  bookings     Booking[]
+  staffFlights StaffFlight[]
+
+  @@map("flights")
+}
+
+enum FlightStatus {
+  ON_TIME
+  DELAYED
+  CANCELLED
+}
+
+model Booking {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  flightId  Int      @map("flight_id")
+  seatNo    String   @map("seat_no")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id])
+  flight Flight @relation(fields: [flightId], references: [id])
+
+  @@unique([flightId, seatNo])
+  @@map("bookings")
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model StaffFlight {
+  id       Int @id @default(autoincrement())
+  staffId  Int @map("staff_id")
+  flightId Int @map("flight_id")
+
+  staff  User   @relation(fields: [staffId], references: [id])
+  flight Flight @relation(fields: [flightId], references: [id])
+
+  @@unique([staffId, flightId])
+  @@map("staff_flights")
+}
