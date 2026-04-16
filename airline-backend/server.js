@@ -2,25 +2,31 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
-const authRoutes = require("./routes/auth.routes");
-const flightRoutes = require("./routes/flight.routes");
-const bookingRoutes = require("./routes/booking.routes");
-const seatRoutes = require("./routes/seat.routes");
-const { ticketRouter, receiptRouter } = require("./routes/ticket.routes");
-const notificationRoutes = require("./routes/notification.routes");
-const userRoutes = require("./routes/user.routes");
-const analyticsRoutes = require("./routes/analytics.routes");
+const authRoutes = require("./routes/auth");
+const flightRoutes = require("./routes/flights");
+const bookingRoutes = require("./routes/bookings");
+const seatRoutes = require("./routes/seats");
+const { ticketRouter, receiptRouter } = require("./routes/tickets");
+const notificationRoutes = require("./routes/notifications");
+const userRoutes = require("./routes/users");
+const analyticsRoutes = require("./routes/analytics");
 
 const app = express();
 
-// CORS — allow deployed frontend origins
+// CORS — allow deployed frontends (comma-separated in env)
 const allowedOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(",")
+  ? process.env.ALLOWED_ORIGINS.split(",").map((o) => o.trim())
   : ["*"];
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -28,9 +34,7 @@ app.use(
 app.use(express.json());
 
 // Health check
-app.get("/", (req, res) => {
-  res.json({ message: "Airline Management System API is running." });
-});
+app.get("/", (req, res) => res.json({ status: "Airline API running ✈" }));
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -46,12 +50,8 @@ app.use("/api/analytics", analyticsRoutes);
 // Global error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
-    error: err.message || "Internal Server Error",
-  });
+  res.status(err.status || 500).json({ error: err.message || "Internal Server Error" });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
