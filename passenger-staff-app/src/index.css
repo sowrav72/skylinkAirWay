@@ -45,40 +45,121 @@
 }
 
 @layer components {
+  /* ── Buttons ─────────────────────────────────── */
   .btn-primary {
-    @apply inline-flex items-center gap-2 px-6 py-3 bg-gold-gradient text-navy-950 font-semibold rounded-lg
-           transition-all duration-300 hover:shadow-gold-lg hover:scale-[1.02] active:scale-[0.98]
-           font-body text-sm tracking-wide;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background-image: linear-gradient(135deg, #e8b523 0%, #f5d78e 50%, #c99a10 100%);
+    color: #060e2a;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.875rem;
+    letter-spacing: 0.025em;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-primary:hover {
+    box-shadow: 0 8px 40px rgba(232,181,35,0.35);
+    transform: scale(1.02);
+  }
+  .btn-primary:active {
+    transform: scale(0.98);
   }
 
   .btn-ghost {
-    @apply inline-flex items-center gap-2 px-6 py-3 border border-white/20 text-white font-medium rounded-lg
-           transition-all duration-300 hover:border-gold-400 hover:text-gold-400 hover:bg-white/5
-           font-body text-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    background: transparent;
+    cursor: pointer;
+  }
+  .btn-ghost:hover {
+    border-color: #f0c84a;
+    color: #f0c84a;
+    background: rgba(255,255,255,0.05);
   }
 
   .btn-outline-gold {
-    @apply inline-flex items-center gap-2 px-6 py-3 border border-gold-500 text-gold-400 font-medium rounded-lg
-           transition-all duration-300 hover:bg-gold-500 hover:text-navy-950
-           font-body text-sm;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: 1px solid #e8b523;
+    color: #f0c84a;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    background: transparent;
+    cursor: pointer;
+  }
+  .btn-outline-gold:hover {
+    background: #e8b523;
+    color: #060e2a;
   }
 
+  /* ── Cards ───────────────────────────────────── */
   .card-glass {
-    @apply bg-glass backdrop-blur-md border border-white/10 rounded-2xl shadow-glass;
+    background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.1);
   }
 
   .card-navy {
-    @apply bg-card-gradient border border-white/8 rounded-2xl shadow-navy;
+    background: linear-gradient(145deg, rgba(20,44,94,0.8) 0%, rgba(6,14,42,0.95) 100%);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 1rem;
+    box-shadow: 0 4px 24px rgba(6,14,42,0.6);
   }
 
+  /* ── Input ───────────────────────────────────── */
   .input-field {
-    @apply w-full bg-navy-800/60 border border-white/15 rounded-xl px-4 py-3 text-white placeholder-white/40
-           font-body text-sm transition-all duration-200
-           focus:outline-none focus:border-gold-500 focus:ring-2 focus:ring-gold-500/20 focus:bg-navy-800/80;
+    width: 100%;
+    background: rgba(12,28,68,0.6);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 0.75rem;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-family: "DM Sans", sans-serif;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+    outline: none;
+  }
+  .input-field::placeholder {
+    color: rgba(255,255,255,0.4);
+  }
+  .input-field:focus {
+    border-color: #e8b523;
+    box-shadow: 0 0 0 2px rgba(232,181,35,0.2);
+    background: rgba(12,28,68,0.8);
   }
 
+  /* ── Labels & Typography ─────────────────────── */
   .label {
-    @apply block text-xs font-medium text-white/60 uppercase tracking-widest mb-2 font-body;
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.5rem;
+    font-family: "DM Sans", sans-serif;
   }
 
   .section-title {
@@ -86,39 +167,87 @@
   }
 
   .gold-text {
-    @apply text-transparent bg-clip-text bg-gold-gradient;
+    color: transparent;
+    background-clip: text;
+    -webkit-background-clip: text;
+    background-image: linear-gradient(135deg, #e8b523 0%, #f5d78e 50%, #c99a10 100%);
   }
 
   .divider-gold {
-    @apply w-12 h-px bg-gold-gradient my-3;
+    width: 3rem;
+    height: 1px;
+    background-image: linear-gradient(135deg, #e8b523 0%, #f5d78e 50%, #c99a10 100%);
+    margin: 0.75rem 0;
   }
 
+  /* ── Badges ──────────────────────────────────── */
   .badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium font-body;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    font-family: "DM Sans", sans-serif;
   }
 
   .badge-green {
-    @apply badge bg-emerald-500/15 text-emerald-400 border border-emerald-500/25;
+    @apply badge;
+    background: rgba(16,185,129,0.15);
+    color: #34d399;
+    border: 1px solid rgba(16,185,129,0.25);
   }
 
   .badge-yellow {
-    @apply badge bg-amber-500/15 text-amber-400 border border-amber-500/25;
+    @apply badge;
+    background: rgba(245,158,11,0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245,158,11,0.25);
   }
 
   .badge-red {
-    @apply badge bg-red-500/15 text-red-400 border border-red-500/25;
+    @apply badge;
+    background: rgba(239,68,68,0.15);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.25);
   }
 
   .badge-blue {
-    @apply badge bg-blue-500/15 text-blue-400 border border-blue-500/25;
+    @apply badge;
+    background: rgba(59,130,246,0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59,130,246,0.25);
   }
 
+  /* ── Nav link ────────────────────────────────── */
   .nav-link {
-    @apply relative text-white/70 hover:text-white transition-colors duration-200 text-sm font-medium font-body
-           after:absolute after:bottom-0 after:left-0 after:w-0 after:h-px after:bg-gold-400
-           after:transition-all after:duration-300 hover:after:w-full;
+    position: relative;
+    color: rgba(255,255,255,0.7);
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: "DM Sans", sans-serif;
+    transition: color 0.2s ease;
+    text-decoration: none;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 1px;
+    background: #f0c84a;
+    transition: width 0.3s ease;
+  }
+  .nav-link:hover {
+    color: white;
+  }
+  .nav-link:hover::after {
+    width: 100%;
   }
 
+  /* ── Animation helpers ───────────────────────── */
   .page-enter {
     animation: fadeUp 0.5s ease forwards;
   }
@@ -129,6 +258,7 @@
   .stagger-4 { animation-delay: 0.4s; }
   .stagger-5 { animation-delay: 0.5s; }
 
+  /* ── Skeleton shimmer ────────────────────────── */
   .shimmer-skeleton {
     background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
     background-size: 200% 100%;
