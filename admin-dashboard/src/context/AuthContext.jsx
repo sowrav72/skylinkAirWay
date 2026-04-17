@@ -7,21 +7,21 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const u = localStorage.getItem('admin_user')
-    const t = localStorage.getItem('admin_token')
+    const u = localStorage.getItem('skylink_admin_user')
+    const t = localStorage.getItem('skylink_admin_token')
     if (u && t) { try { setUser(JSON.parse(u)) } catch {} }
     setLoading(false)
   }, [])
 
   const login = (userData, token) => {
-    localStorage.setItem('admin_token', token)
-    localStorage.setItem('admin_user', JSON.stringify(userData))
+    localStorage.setItem('skylink_admin_token', token)
+    localStorage.setItem('skylink_admin_user', JSON.stringify(userData))
     setUser(userData)
   }
 
   const logout = () => {
-    localStorage.removeItem('admin_token')
-    localStorage.removeItem('admin_user')
+    localStorage.removeItem('skylink_admin_token')
+    localStorage.removeItem('skylink_admin_user')
     setUser(null)
   }
 

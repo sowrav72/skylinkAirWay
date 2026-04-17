@@ -7,7 +7,7 @@ const api = axios.create({
 
 // Attach JWT token to every request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('skylink_token')
   if (token) config.headers.Authorization = `Bearer ${token}`
   return config
 })
@@ -17,9 +17,12 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      window.location.href = '/login'
+      localStorage.removeItem('skylink_token')
+      localStorage.removeItem('skylink_user')
+      // Prevent infinite redirect loop
+      if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(err)
   }
