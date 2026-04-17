@@ -1,87 +1,64 @@
-# Airline Management System — Backend API
+# SkyWings Backend API v2.0
 
-## Render Deployment Settings
+## Render Deployment
 
-| Setting           | Value                          |
-|-------------------|-------------------------------|
-| **Language**      | Node                          |
-| **Root Directory**| `airline-backend`             |
-| **Build Command** | `npm install && npx prisma generate && npx prisma db push` |
-| **Start Command** | `node server.js`              |
+| Setting           | Value                                                            |
+|-------------------|------------------------------------------------------------------|
+| **Language**      | Node                                                             |
+| **Root Directory**| `airline-backend`                                                |
+| **Build Command** | `npm install && npx prisma generate && npx prisma db push`       |
+| **Start Command** | `node server.js`                                                 |
 
-## Environment Variables (add in Render Dashboard)
+## Environment Variables
 
-| Key               | Value                                                         |
-|-------------------|---------------------------------------------------------------|
-| `DATABASE_URL`    | PostgreSQL connection string from Neon (with `?sslmode=require`) |
-| `JWT_SECRET`      | Any long random string (e.g. 64-char hex)                     |
-| `ALLOWED_ORIGINS` | Comma-separated deployed frontend URLs                        |
-| `PORT`            | Set by Render automatically — do NOT set manually             |
+| Key               | Description                                         | Required |
+|-------------------|-----------------------------------------------------|----------|
+| `DATABASE_URL`    | Neon PostgreSQL connection string (`?sslmode=require`) | ✅ |
+| `DIRECT_URL`      | Same as DATABASE_URL (for Prisma migrations on Neon)   | ✅ |
+| `JWT_SECRET`      | Long random secret (min 64 chars). Generate with: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"` | ✅ |
+| `ALLOWED_ORIGINS` | Comma-separated frontend URLs (no wildcards)        | ✅ |
+| `NODE_ENV`        | `production`                                        | ✅ |
 
-## Local Development
+## Seed Demo Data
+
+After deploying, run the seed script once:
 
 ```bash
-cp .env.example .env
-# fill in .env with your Neon DATABASE_URL and JWT_SECRET
-
-npm install
-npx prisma generate
-npx prisma db push   # creates tables on Neon
-node server.js
+# If you have direct database access / Render shell:
+npm run db:seed
 ```
 
-## API Reference
+Or run locally pointing at the Neon database:
+```bash
+DATABASE_URL="..." npm run db:seed
+```
 
-### Auth
-| Method | Endpoint              | Auth | Description        |
-|--------|-----------------------|------|--------------------|
-| POST   | /api/auth/register    | —    | Register passenger |
-| POST   | /api/auth/login       | —    | Login any role     |
+## Demo Credentials (after seeding)
 
-### Flights
-| Method | Endpoint                      | Auth         | Description              |
-|--------|-------------------------------|--------------|--------------------------|
-| GET    | /api/flights                  | —            | Search flights           |
-| GET    | /api/flights/:id              | —            | Flight detail            |
-| POST   | /api/flights                  | admin        | Create flight            |
-| PUT    | /api/flights/:id              | admin/staff  | Update flight            |
-| DELETE | /api/flights/:id              | admin        | Delete flight            |
-| GET    | /api/flights/:id/passengers   | admin/staff  | Passenger list           |
-| GET    | /api/flights/staff/assigned   | staff/admin  | Staff's assigned flights |
+| Role      | Email                      | Password               |
+|-----------|----------------------------|------------------------|
+| Admin     | admin@skywings.com         | Admin@SkyWings2025!    |
+| Staff 1   | sarah.jones@skywings.com   | Staff@SkyWings2025!    |
+| Staff 2   | mike.chen@skywings.com     | Staff@SkyWings2025!    |
+| Passenger | alice.rahman@gmail.com     | Pass@SkyWings2025!     |
+| Passenger | bob.hasan@gmail.com        | Pass@SkyWings2025!     |
+| Passenger | carol.ahmed@gmail.com      | Pass@SkyWings2025!     |
 
-### Bookings
-| Method | Endpoint              | Auth      | Description        |
-|--------|-----------------------|-----------|--------------------|
-| POST   | /api/bookings         | passenger | Book a seat        |
-| GET    | /api/bookings/user    | any       | My bookings        |
-| DELETE | /api/bookings/:id     | any       | Cancel booking     |
+⚠️ Change all passwords immediately after first login!
 
-### Seats
-| Method | Endpoint              | Auth | Description           |
-|--------|-----------------------|------|-----------------------|
-| GET    | /api/seats/:flightId  | —    | Seat map for flight   |
+## Security Fixes in v2.0
 
-### Tickets & Receipts
-| Method | Endpoint                     | Auth | Description        |
-|--------|------------------------------|------|--------------------|
-| GET    | /api/tickets/:id/download    | any  | Download PDF ticket|
-| GET    | /api/receipts/:id/download   | any  | Download PDF receipt|
-
-### Notifications
-| Method | Endpoint                        | Auth | Description           |
-|--------|---------------------------------|------|-----------------------|
-| GET    | /api/notifications              | any  | Get my notifications  |
-| PUT    | /api/notifications/:id/read     | any  | Mark as read          |
-
-### Users (Admin)
-| Method | Endpoint                    | Auth  | Description           |
-|--------|-----------------------------|-------|-----------------------|
-| GET    | /api/users                  | admin | All users             |
-| POST   | /api/users                  | admin | Create staff/admin    |
-| DELETE | /api/users/:id              | admin | Delete user           |
-| POST   | /api/users/assign-staff     | admin | Assign staff to flight|
-
-### Analytics (Admin)
-| Method | Endpoint          | Auth  | Description     |
-|--------|-------------------|-------|-----------------|
-| GET    | /api/analytics    | admin | Dashboard stats |
+- ✅ Rate limiting on auth (10/15min) and all APIs (200/min)
+- ✅ Explicit CORS allowlist — no wildcards
+- ✅ Zod input validation on all endpoints
+- ✅ Booking race condition fixed with DB transactions
+- ✅ Staff can only edit assigned flights
+- ✅ Cancelled bookings don't block seat availability
+- ✅ Audit log for all admin actions
+- ✅ Password change endpoint
+- ✅ Paginated flights, bookings, notifications (no browser crash at scale)
+- ✅ Notification cleanup endpoint
+- ✅ Unique flightNumber field
+- ✅ DB indexes on all foreign keys and search fields
+- ✅ bcrypt cost factor raised to 12
+- ✅ Error messages never reveal internal details

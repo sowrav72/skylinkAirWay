@@ -1,54 +1,40 @@
-const prisma = require("../middleware/prismaClient");
+const prisma = require('../middleware/prismaClient')
 
-// GET /api/analytics
 async function getAnalytics(req, res) {
   try {
-    const [totalUsers, totalFlights, totalBookings, cancelledBookings, revenue] =
-      await Promise.all([
-        prisma.user.count(),
-        prisma.flight.count(),
-        prisma.booking.count({ where: { status: "CONFIRMED" } }),
-        prisma.booking.count({ where: { status: "CANCELLED" } }),
-        prisma.booking.findMany({
-          where: { status: "CONFIRMED" },
-          include: { flight: { select: { price: true } } },
-        }),
-      ]);
+    const [
+      totalUsers, totalFlights, totalBookings,
+      cancelledBookings, flightsByStatus, usersByRole,
+      recentBookings,
+    ] = await Promise.all([
+      prisma.user.count(),
+      prisma.flight.count(),
+      prisma.booking.count({ where: { status: 'CONFIRMED' } }),
+      prisma.booking.count({ where: { status: 'CANCELLED' } }),
+      prisma.flight.groupBy({ by: ['status'], _count: { id: true } }),
+      prisma.user.groupBy({  by: ['role'],   _count: { id: true } }),
+      // Revenue: sum price of all confirmed bookings
+      prisma.booking.findMany({
+        where:   { status: 'CONFIRMED' },
+        include: { flight: { select: { price: true } } },
+      }),
+    ])
 
-    const totalRevenue = revenue.reduce(
-      (sum, b) => sum + Number(b.flight.price),
-      0
-    );
-
-    const flightsByStatus = await prisma.flight.groupBy({
-      by: ["status"],
-      _count: { id: true },
-    });
-
-    const usersByRole = await prisma.user.groupBy({
-      by: ["role"],
-      _count: { id: true },
-    });
+    const totalRevenue = recentBookings.reduce((sum, b) => sum + Number(b.flight.price), 0)
 
     res.json({
       totalUsers,
       totalFlights,
       totalBookings,
       cancelledBookings,
-      totalRevenue: totalRevenue.toFixed(2),
-      flightsByStatus: flightsByStatus.map((f) => ({
-        status: f.status,
-        count: f._count.id,
-      })),
-      usersByRole: usersByRole.map((u) => ({
-        role: u.role,
-        count: u._count.id,
-      })),
-    });
+      totalRevenue:    totalRevenue.toFixed(2),
+      flightsByStatus: flightsByStatus.map(f => ({ status: f.status, count: f._count.id })),
+      usersByRole:     usersByRole.map(u => ({ role: u.role, count: u._count.id })),
+    })
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to fetch analytics" });
+    console.error('analytics:', err)
+    res.status(500).json({ error: 'Failed to fetch analytics' })
   }
 }
 
-module.exports = { getAnalytics };
+module.exports = { getAnalytics }

@@ -3,26 +3,35 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
+// ─── Users ────────────────────────────────────────────────────────────────────
 model User {
   id            Int            @id @default(autoincrement())
   name          String
   email         String         @unique
   password      String
   role          Role           @default(passenger)
+  isActive      Boolean        @default(true) @map("is_active")
   createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
   bookings      Booking[]
   notifications Notification[]
   staffFlights  StaffFlight[]
+  auditLogs     AuditLog[]
 
+  @@index([email])
+  @@index([role])
   @@map("users")
 }
 
+// ─── Flights ──────────────────────────────────────────────────────────────────
 model Flight {
   id            Int           @id @default(autoincrement())
+  flightNumber  String        @unique @map("flight_number")
   origin        String
   destination   String
   departureTime DateTime      @map("departure_time")
@@ -31,48 +40,79 @@ model Flight {
   price         Decimal       @db.Decimal(10, 2)
   status        FlightStatus  @default(ON_TIME)
   createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
   bookings      Booking[]
   staffFlights  StaffFlight[]
 
+  @@index([origin, destination])
+  @@index([departureTime])
+  @@index([status])
   @@map("flights")
 }
 
+// ─── Bookings ─────────────────────────────────────────────────────────────────
 model Booking {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @map("user_id")
-  flightId  Int      @map("flight_id")
-  seatNo    String   @map("seat_no")
+  id        Int           @id @default(autoincrement())
+  userId    Int           @map("user_id")
+  flightId  Int           @map("flight_id")
+  seatNo    String        @map("seat_no")
   status    BookingStatus @default(CONFIRMED)
-  createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id])
-  flight    Flight   @relation(fields: [flightId], references: [id])
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flight    Flight        @relation(fields: [flightId], references: [id], onDelete: Cascade)
 
+  // Unique: one seat per flight (prevents double-booking at DB level)
   @@unique([flightId, seatNo])
+  @@index([userId])
+  @@index([flightId])
   @@map("bookings")
 }
 
+// ─── Notifications ────────────────────────────────────────────────────────────
 model Notification {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   message   String
   isRead    Boolean  @default(false) @map("is_read")
   createdAt DateTime @default(now()) @map("created_at")
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId, isRead])
   @@map("notifications")
 }
 
+// ─── Staff→Flight Assignments ─────────────────────────────────────────────────
 model StaffFlight {
-  id       Int    @id @default(autoincrement())
-  staffId  Int    @map("staff_id")
-  flightId Int    @map("flight_id")
-  staff    User   @relation(fields: [staffId], references: [id])
-  flight   Flight @relation(fields: [flightId], references: [id])
+  id        Int      @id @default(autoincrement())
+  staffId   Int      @map("staff_id")
+  flightId  Int      @map("flight_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  staff     User     @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  flight    Flight   @relation(fields: [flightId], references: [id], onDelete: Cascade)
 
   @@unique([staffId, flightId])
   @@map("staff_flights")
 }
 
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  action     String
+  resource   String
+  resourceId String?  @map("resource_id")
+  details    String?
+  ip         String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
 enum Role {
   passenger
   staff
