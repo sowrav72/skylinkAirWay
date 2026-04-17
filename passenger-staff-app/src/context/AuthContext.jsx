@@ -7,8 +7,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem('skylink_user')
-    const token = localStorage.getItem('skylink_token')
+    const stored = localStorage.getItem('user')
+    const token = localStorage.getItem('token')
     if (stored && token) {
       try { setUser(JSON.parse(stored)) } catch { /* ignore */ }
     }
@@ -16,14 +16,14 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = (userData, token) => {
-    localStorage.setItem('skylink_token', token)
-    localStorage.setItem('skylink_user', JSON.stringify(userData))
+    localStorage.setItem('token', token)
+    localStorage.setItem('user', JSON.stringify(userData))
     setUser(userData)
   }
 
   const logout = () => {
-    localStorage.removeItem('skylink_token')
-    localStorage.removeItem('skylink_user')
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
     setUser(null)
   }
 

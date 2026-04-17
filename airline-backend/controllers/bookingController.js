@@ -10,56 +10,40 @@ async function createBooking(req, res) {
       return res.status(400).json({ error: "flightId and seatNo are required" });
     }
 
-    const flightIdNum = Number(flightId);
-
-    const flight = await prisma.flight.findUnique({ where: { id: flightIdNum } });
+    const flight = await prisma.flight.findUnique({ where: { id: Number(flightId) } });
     if (!flight) return res.status(404).json({ error: "Flight not found" });
     if (flight.status === "CANCELLED") {
       return res.status(400).json({ error: "Cannot book a cancelled flight" });
     }
 
-    // Use transaction to prevent race conditions
-    const booking = await prisma.$transaction(async (tx) => {
-      // Check seat availability within transaction
-      const existingSeat = await tx.booking.findUnique({
-        where: { flightId_seatNo: { flightId: flightIdNum, seatNo } },
-      });
-      
-      if (existingSeat && existingSeat.status === "CONFIRMED") {
-        throw { status: 409, message: "Seat already booked" };
-      }
+    // Prevent double-booking of same seat
+    const existingSeat = await prisma.booking.findUnique({
+      where: { flightId_seatNo: { flightId: Number(flightId), seatNo } },
+    });
+    if (existingSeat) {
+      return res.status(409).json({ error: "Seat already booked" });
+    }
 
-      // Check total seat capacity
-      const totalBooked = await tx.booking.count({
-        where: { flightId: flightIdNum, status: "CONFIRMED" },
-      });
-      
-      if (totalBooked >= flight.totalSeats) {
-        throw { status: 409, message: "Flight is fully booked" };
-      }
+    // Check total seat capacity
+    const totalBooked = await prisma.booking.count({
+      where: { flightId: Number(flightId), status: "CONFIRMED" },
+    });
+    if (totalBooked >= flight.totalSeats) {
+      return res.status(409).json({ error: "Flight is fully booked" });
+    }
 
-      // Create booking
-      return await tx.booking.create({
-        data: {
-          userId,
-          flightId: flightIdNum,
-          seatNo,
-        },
-        include: { flight: true, user: { select: { id: true, name: true, email: true } } },
-      });
-    }, {
-      isolationLevel: 'Serializable'
+    const booking = await prisma.booking.create({
+      data: {
+        userId,
+        flightId: Number(flightId),
+        seatNo,
+      },
+      include: { flight: true, user: { select: { id: true, name: true, email: true } } },
     });
 
     res.status(201).json(booking);
   } catch (err) {
     console.error(err);
-    if (err.status && err.message) {
-      return res.status(err.status).json({ error: err.message });
-    }
-    if (err.code === 'P2002') { // Unique constraint violation
-      return res.status(409).json({ error: "Seat was just booked by another passenger" });
-    }
     res.status(500).json({ error: "Booking failed" });
   }
 }
