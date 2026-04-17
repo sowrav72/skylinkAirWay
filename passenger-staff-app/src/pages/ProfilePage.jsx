@@ -1,7 +1,6 @@
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
-import { Link } from 'react-router-dom'
-import { User, Mail, Shield, Calendar, LogOut, BookOpen, Briefcase } from 'lucide-react'
+import { User, Mail, Shield, Calendar, LogOut } from 'lucide-react'
 import { format } from 'date-fns'
 
 export default function ProfilePage() {
@@ -59,28 +58,8 @@ export default function ProfilePage() {
           ))}
         </div>
 
-        {/* Role-specific Dashboards */}
-        {user?.role === 'passenger' && (
-          <div className="card-navy p-6 mb-5 animate-fade-up stagger-3">
-            <p className="text-xs text-white/40 uppercase tracking-widest font-body mb-4">Passenger Portal</p>
-            <Link to="/my-bookings" className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 font-medium">
-              <BookOpen className="w-4 h-4" />
-              Go to My Bookings Dashboard
-            </Link>
-          </div>
-        )}
-        {user?.role === 'staff' && (
-          <div className="card-navy p-6 mb-5 animate-fade-up stagger-3">
-            <p className="text-xs text-white/40 uppercase tracking-widest font-body mb-4">Staff Portal</p>
-            <Link to="/staff" className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 font-medium">
-              <Briefcase className="w-4 h-4" />
-              Go to Staff Dashboard
-            </Link>
-          </div>
-        )}
-
         {/* Sign out */}
-        <div className="animate-fade-up stagger-4">
+        <div className="animate-fade-up stagger-3">
           <button onClick={handleLogout}
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl border border-red-500/25 text-red-400 hover:bg-red-500/10 transition-all font-body text-sm font-medium">
             <LogOut className="w-4 h-4" /> Sign Out of SkyWings
