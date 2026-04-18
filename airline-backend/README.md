@@ -6,7 +6,7 @@
 |-------------------|------------------------------------------------------------------|
 | **Language**      | Node                                                             |
 | **Root Directory**| `airline-backend`                                                |
-| **Build Command** | `npm install && npx prisma generate && npx prisma db push`       |
+| **Build Command** | `npm install && npx prisma generate && npx prisma db push`        |
 | **Start Command** | `node server.js`                                                 |
 
 ## Environment Variables
