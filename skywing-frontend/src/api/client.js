@@ -51,6 +51,9 @@ export const publicSearchFlights = (params) =>
 // Authenticated flight search (passenger only)
 export const searchFlights  = (params)  => client.get('/api/passenger/flights/search', { params })
 
+// Airport/city autocomplete — backend derives from flights table, no auth required
+export const searchAirports = (query)   => publicClient.get('/api/airports', { params: { search: query } })
+
 // ─── Passenger ────────────────────────────────────────────────────────────────
 export const getPaxProfile = ()      => client.get('/api/passenger/profile')
 export const putPaxProfile = (body)  => client.put('/api/passenger/profile', body)

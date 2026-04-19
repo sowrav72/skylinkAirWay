@@ -41,10 +41,13 @@ function fmtDuration(dep, arr) {
 export default function FlightResultCard({ flight, token, role, onBook }) {
   const st       = STATUS_STYLE[flight.status] ?? STATUS_STYLE.scheduled
   const duration = fmtDuration(flight.departure_time, flight.arrival_time)
-  const canBook  = flight.status !== 'cancelled'
-                && flight.status !== 'departed'
-                && flight.status !== 'arrived'
-                && flight.available_seats > 0
+
+  // Reasons a flight may not be bookable
+  const isFull     = flight.available_seats <= 0
+  const isInactive = flight.status === 'cancelled'
+                  || flight.status === 'departed'
+                  || flight.status === 'arrived'
+  const canBook    = !isFull && !isInactive
 
   return (
     <div className="border border-white/10 bg-white/[0.02] hover:border-white/20
@@ -151,7 +154,14 @@ export default function FlightResultCard({ flight, token, role, onBook }) {
                   /* Staff — view only */
                   <span className="text-xs text-white/25 font-mono">Staff — view only</span>
                 )
+              ) : isFull ? (
+                /* 0 seats remaining */
+                <span className="text-xs font-mono px-2 py-0.5 border
+                                 border-red-500/30 text-red-400 bg-red-500/10">
+                  Full
+                </span>
               ) : (
+                /* Cancelled / departed / arrived */
                 <span className="text-xs text-white/25 font-mono">Unavailable</span>
               )}
             </div>

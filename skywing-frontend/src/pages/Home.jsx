@@ -11,11 +11,13 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Link, useNavigate }        from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth }                  from '../contexts/AuthContext'
 import { publicSearchFlights, searchFlights } from '../api/client'
 import AutocompleteInput            from '../components/AutocompleteInput'
 import FlightResultCard             from '../components/FlightResultCard'
+
+const MAX_RESULTS = 20   // FIX 5: cap displayed results
 
 // ─── Star field (memoised — computed once at module load) ─────────────────────
 const STARS = Array.from({ length: 80 }, (_, i) => ({
@@ -224,20 +226,22 @@ function PublicNav({ scrolled }) {
 export default function Home() {
   const navigate        = useNavigate()
   const { token, role } = useAuth()
+  const [searchParams, setSearchParams] = useSearchParams()   // FIX 8
 
   // ── Scroll state ─────────────────────────────────────────────────────────────
   const [scrolled, setScrolled] = useState(false)
 
-  // ── Search form state ─────────────────────────────────────────────────────────
-  const [from,   setFrom]   = useState('')
-  const [to,     setTo]     = useState('')
-  const [date,   setDate]   = useState('')
+  // ── Search form state — initialised from URL params (FIX 8) ──────────────────
+  const [from,   setFrom]   = useState(() => searchParams.get('origin')      || '')
+  const [to,     setTo]     = useState(() => searchParams.get('destination') || '')
+  const [date,   setDate]   = useState(() => searchParams.get('date')        || '')
 
   // ── Results state ─────────────────────────────────────────────────────────────
   const [results,  setResults]  = useState([])
   const [searched, setSearched] = useState(false)
   const [loading,  setLoading]  = useState(false)
-  const [searchErr,setSearchErr]= useState('')
+  const [searchErr, setSearchErr] = useState('')   // validation / form errors
+  const [apiError,  setApiError]  = useState('')   // FIX 1+2: API-level errors, separate state
 
   // ── Section visibility ────────────────────────────────────────────────────────
   const [statsRef,  statsVisible] = useInView(0.2)
@@ -257,62 +261,68 @@ export default function Home() {
     return () => window.removeEventListener('scroll', h)
   }, [])
 
+  // FIX 8: auto-run search when page loads with URL params already set
+  useEffect(() => {
+    const o = searchParams.get('origin')
+    const d = searchParams.get('destination')
+    if (o && d) {
+      handleSearch(null, o, d)
+    }
+    // Only run on mount — intentionally omit handleSearch from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // ── Search handler ────────────────────────────────────────────────────────────
   // Visitors CAN search — no auth required.
   const handleSearch = useCallback(async (e, prefillFrom, prefillTo) => {
     if (e) e.preventDefault()
-    const origin      = prefillFrom ?? from
-    const destination = prefillTo   ?? to
+    const origin      = (prefillFrom ?? from).trim()
+    const destination = (prefillTo   ?? to).trim()
 
-    if (!origin.trim() || !destination.trim()) {
+    // Form validation — these are NOT API errors
+    if (!origin || !destination) {
       setSearchErr('Please enter both origin and destination.')
       return
     }
 
+    // Clear all states before fetching
     setSearchErr('')
+    setApiError('')       // FIX 1: clear API error so states don't overlap
     setLoading(true)
     setSearched(false)
+    setResults([])
+
+    // FIX 8: sync search params into URL
+    const urlParams = { origin, destination }
+    if (date) urlParams.date = date
+    setSearchParams(urlParams, { replace: true })
 
     try {
-      const params = {
-        origin:      origin.trim(),
-        destination: destination.trim(),
-        ...(date && { date }),
-      }
-
+      const params = { origin, destination, ...(date && { date }) }
       let data = []
 
       if (token) {
-        // Authenticated: use the passenger search endpoint
         const res = await searchFlights(params)
         data = res.data.flights ?? []
       } else {
-        // Visitor: use the public endpoint
-        try {
-          const res = await publicSearchFlights(params)
-          data = res.data.flights ?? []
-        } catch {
-          // If /api/flights is not available (backend older than spec),
-          // we show an empty result and encourage sign-up.
-          data = []
-        }
+        // FIX 2: propagate error instead of silently returning []
+        const res = await publicSearchFlights(params)
+        data = res.data.flights ?? []
       }
 
       setResults(data)
       setSearched(true)
-
-      // Scroll to results after render
       setTimeout(() => {
         resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       }, 80)
     } catch (err) {
-      setSearchErr(err.message)
-      setResults([])
-      setSearched(true)
+      // FIX 1+2: set apiError (not searchErr) so results section shows error state
+      setApiError('Unable to fetch flights. Please try again.')
+      setSearched(true)   // show results section so error is visible
     } finally {
       setLoading(false)
     }
-  }, [from, to, date, token])
+  }, [from, to, date, token, setSearchParams])
 
   // ── Booking CTA handler ───────────────────────────────────────────────────────
   const handleBook = useCallback((flightId, isAuth) => {
@@ -513,7 +523,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════
-          SEARCH RESULTS  (inline, below search bar)
+          SEARCH RESULTS — 3 mutually exclusive states: loading | error | data
       ══════════════════════════════════════════════════════════════════ */}
       {(searched || loading) && (
         <section
@@ -522,34 +532,33 @@ export default function Home() {
         >
           <div className="max-w-5xl mx-auto">
 
-            {/* Results header */}
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                {loading ? (
-                  <p className="text-sm text-white/40 font-mono animate-pulse">
-                    Searching available flights…
+            {/* Header — only when not loading */}
+            {!loading && (
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <p className="text-xs text-white/30 font-mono uppercase tracking-wider mb-1">
+                    Results for
                   </p>
-                ) : (
-                  <>
-                    <p className="text-xs text-white/30 font-mono uppercase tracking-wider mb-1">
-                      Results for
-                    </p>
-                    <h2 className="font-display text-2xl font-semibold text-white">
-                      {from} <span className="text-white/30 font-light mx-2">→</span> {to}
-                    </h2>
-                  </>
+                  <h2 className="font-display text-2xl font-semibold text-white">
+                    {from} <span className="text-white/30 font-light mx-2">→</span> {to}
+                  </h2>
+                </div>
+                {!apiError && results.length > 0 && (
+                  <span className="text-xs font-mono border border-white/15 px-3 py-1.5 text-white/40">
+                    {results.length > MAX_RESULTS
+                      ? `Showing ${MAX_RESULTS} of ${results.length}`
+                      : `${results.length} flight${results.length !== 1 ? 's' : ''} found`}
+                  </span>
                 )}
               </div>
-              {!loading && results.length > 0 && (
-                <span className="text-xs font-mono border border-white/15 px-3 py-1.5 text-white/40">
-                  {results.length} flight{results.length !== 1 ? 's' : ''} found
-                </span>
-              )}
-            </div>
+            )}
 
-            {/* Loading skeleton */}
+            {/* ── STATE 1: LOADING ─────────────────────────────────────── */}
             {loading && (
               <div className="space-y-3">
+                <p className="text-sm text-white/40 font-mono animate-pulse mb-4">
+                  Searching available flights…
+                </p>
                 {[1, 2, 3].map(i => (
                   <div key={i} className="border border-white/8 p-5 animate-pulse">
                     <div className="flex gap-6">
@@ -562,8 +571,25 @@ export default function Home() {
               </div>
             )}
 
-            {/* No results */}
-            {!loading && searched && results.length === 0 && (
+            {/* ── STATE 2: API ERROR ───────────────────────────────────── */}
+            {!loading && apiError && (
+              <div className="border border-red-500/20 bg-red-500/5 py-12 text-center">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+                  stroke="rgba(239,68,68,0.5)" strokeWidth="1.5"
+                  className="mx-auto mb-3">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <p className="text-red-400 font-body mb-1 text-sm">{apiError}</p>
+                <p className="text-white/20 text-xs font-mono">
+                  Check your connection and try again
+                </p>
+              </div>
+            )}
+
+            {/* ── STATE 3a: EMPTY (no error, no results) ───────────────── */}
+            {!loading && !apiError && searched && results.length === 0 && (
               <div className="border border-white/8 py-14 text-center">
                 <svg width="40" height="40" viewBox="0 0 24 24" fill="none"
                   stroke="rgba(255,255,255,0.15)" strokeWidth="1.5"
@@ -587,10 +613,10 @@ export default function Home() {
               </div>
             )}
 
-            {/* Results list */}
-            {!loading && results.length > 0 && (
+            {/* ── STATE 3b: RESULTS (capped at MAX_RESULTS) ────────────── */}
+            {!loading && !apiError && results.length > 0 && (
               <div className="space-y-2">
-                {results.map(f => (
+                {results.slice(0, MAX_RESULTS).map(f => (
                   <FlightResultCard
                     key={f.id}
                     flight={f}
@@ -600,7 +626,14 @@ export default function Home() {
                   />
                 ))}
 
-                {/* Bottom register nudge for visitors */}
+                {/* Overflow notice */}
+                {results.length > MAX_RESULTS && (
+                  <p className="text-xs text-white/25 font-mono text-center py-2">
+                    Showing first {MAX_RESULTS} results — refine your search to see others
+                  </p>
+                )}
+
+                {/* Visitor register nudge */}
                 {!token && (
                   <div className="border border-white/8 bg-white/[0.02] p-5
                                   flex flex-col sm:flex-row items-center
@@ -631,6 +664,7 @@ export default function Home() {
                 )}
               </div>
             )}
+
           </div>
         </section>
       )}

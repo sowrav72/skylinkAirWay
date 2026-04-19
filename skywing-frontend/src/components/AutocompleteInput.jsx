@@ -14,8 +14,9 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useDebounce } from '../hooks/useDebounce'
+import { useDebounce }    from '../hooks/useDebounce'
 import { filterAirports } from '../data/airports'
+import { searchAirports } from '../api/client'
 
 export default function AutocompleteInput({
   value,
@@ -38,10 +39,36 @@ export default function AutocompleteInput({
       setOpen(false)
       return
     }
-    const results = filterAirports(debouncedQ)
-    setSugg(results)
-    setOpen(results.length > 0)
-    setActive(-1)
+
+    let cancelled = false
+
+    async function fetchSuggestions() {
+      // 1. Try backend /api/airports (derived from flights table — most relevant)
+      try {
+        const res     = await searchAirports(debouncedQ)
+        const cities  = res.data.suggestions ?? []
+        if (cancelled) return
+        if (cities.length > 0) {
+          // Shape into same object form as static data for uniform rendering
+          setSugg(cities.map(city => ({ city, code: '', country: '' })))
+          setOpen(true)
+          setActive(-1)
+          return
+        }
+      } catch {
+        // Backend unavailable — fall through to static list
+      }
+
+      // 2. Fall back to static airport dataset
+      if (cancelled) return
+      const staticResults = filterAirports(debouncedQ)
+      setSugg(staticResults)
+      setOpen(staticResults.length > 0)
+      setActive(-1)
+    }
+
+    fetchSuggestions()
+    return () => { cancelled = true }
   }, [debouncedQ])
 
   // ── Close on outside click ─────────────────────────────────────────────────
@@ -139,14 +166,18 @@ export default function AutocompleteInput({
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
                 <span className="font-body text-sm truncate">{airport.city}</span>
-                <span className="text-xs text-white/30 font-mono shrink-0">
-                  {airport.country}
+                {airport.country && (
+                  <span className="text-xs text-white/30 font-mono shrink-0">
+                    {airport.country}
+                  </span>
+                )}
+              </span>
+              {airport.code && (
+                <span className="font-mono text-xs shrink-0"
+                  style={{ color: active === idx ? '#C9A84C' : 'rgba(255,255,255,0.25)' }}>
+                  {airport.code}
                 </span>
-              </span>
-              <span className="font-mono text-xs shrink-0"
-                style={{ color: active === idx ? '#C9A84C' : 'rgba(255,255,255,0.25)' }}>
-                {airport.code}
-              </span>
+              )}
             </button>
           ))}
         </div>

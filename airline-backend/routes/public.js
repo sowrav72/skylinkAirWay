@@ -70,4 +70,42 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /api/airports?search=query
+// Public — no JWT required.
+// Derives city suggestions from distinct origins + destinations in flights table.
+// Returns up to 10 matches, sorted alphabetically.
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/airports', async (req, res) => {
+  const { search } = req.query;
+
+  if (!search || search.trim().length < 2) {
+    return res.status(400).json({ error: 'search param must be at least 2 characters' });
+  }
+
+  try {
+    const q = `%${search.trim().toLowerCase()}%`;
+
+    const result = await pool.query(
+      `SELECT DISTINCT city FROM (
+         SELECT origin      AS city FROM flights
+         UNION
+         SELECT destination AS city FROM flights
+       ) AS cities
+       WHERE LOWER(city) LIKE $1
+       ORDER BY city ASC
+       LIMIT 10`,
+      [q]
+    );
+
+    res.json({
+      suggestions: result.rows.map(r => r.city),
+      count:       result.rows.length
+    });
+  } catch (err) {
+    console.error('[GET /api/airports]', err.message);
+    res.status(500).json({ error: 'Airport search failed' });
+  }
+});
+
 module.exports = router;
