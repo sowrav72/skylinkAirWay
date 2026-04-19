@@ -1,6 +1,6 @@
 /**
- * server.js — Phase 3
- * Adds: /api/notifications
+ * server.js — Phase 4
+ * Adds: /api/flights (public, no auth required)
  */
 
 'use strict';
@@ -20,6 +20,8 @@ const ticketsRoutes       = require('./routes/tickets');
 const receiptsRoutes      = require('./routes/receipts');
 // ── Phase 3 routes ─────────────────────────────────────────────────────────
 const notificationsRoutes = require('./routes/notifications');
+// ── Phase 4 routes ─────────────────────────────────────────────────────────
+const publicRoutes        = require('./routes/public');   // no auth
 
 const app = express();
 
@@ -37,11 +39,11 @@ app.use(express.urlencoded({ extended: true }));
 // ── Health ────────────────────────────────────────────────────────────────────
 app.get('/', (_req, res) => {
   res.json({
-    message:   'Airline Management System API — Phase 3',
-    version:   '3.0.0',
+    message:   'Airline Management System API — Phase 4',
+    version:   '4.0.0',
     status:    'running',
     timestamp: new Date().toISOString(),
-    features:  ['auth', 'flights', 'bookings', 'seats', 'tickets', 'receipts', 'notifications']
+    features:  ['auth', 'flights', 'bookings', 'seats', 'tickets', 'receipts', 'notifications', 'public-search']
   });
 });
 
@@ -55,7 +57,8 @@ app.use('/api/staff',          staffRoutes);
 app.use('/api/seats',          seatsRoutes);
 app.use('/api/tickets',        ticketsRoutes);
 app.use('/api/receipts',       receiptsRoutes);
-app.use('/api/notifications',  notificationsRoutes);   // ← Phase 3
+app.use('/api/notifications',  notificationsRoutes);
+app.use('/api/flights',        publicRoutes);            // ← Phase 4 public
 
 // ── 404 ───────────────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -72,6 +75,6 @@ app.use((err, _req, res, _next) => {
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`✈  Airline API v3 running on port ${PORT}`);
+  console.log(`✈  Airline API v4 running on port ${PORT}`);
   console.log(`   Environment : ${process.env.NODE_ENV || 'development'}`);
 });
