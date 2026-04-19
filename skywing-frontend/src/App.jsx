@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider }         from './components/ui/Toast'
 import { RequireRole }           from './components/ProtectedRoute'
 
+import Home     from './pages/Home'
 import Login    from './pages/Login'
 import Register from './pages/Register'
 
@@ -18,23 +19,15 @@ import StaffFlights  from './pages/staff/Flights'
 import StaffProfile  from './pages/staff/Profile'
 import FlightDetail  from './pages/staff/FlightDetail'
 
-function RootRedirect() {
-  const { token, role } = useAuth()
-  if (!token)              return <Navigate to="/login"           replace />
-  if (role === 'staff')    return <Navigate to="/staff/flights"   replace />
-  if (role === 'passenger')return <Navigate to="/passenger/flights" replace />
-  return <Navigate to="/login" replace />
-}
-
 export default function App() {
   return (
     <AuthProvider>
       <ToastProvider>
         <Routes>
           {/* Public */}
+          <Route path="/"         element={<Home />} />
           <Route path="/login"    element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/"         element={<RootRedirect />} />
 
           {/* Passenger */}
           <Route element={<RequireRole role="passenger" />}>
