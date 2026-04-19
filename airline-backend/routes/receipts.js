@@ -1,8 +1,8 @@
 /**
- * routes/tickets.js
- * GET /api/tickets/:bookingId/download
+ * routes/receipts.js
+ * GET /api/receipts/:bookingId/download
  *
- * Generates and streams a branded boarding-pass PDF using pdfkit.
+ * Generates and streams a branded payment receipt PDF using pdfkit.
  * Accessible by:
  *   - The passenger who owns the booking
  *   - Any admin
@@ -10,14 +10,14 @@
 
 'use strict';
 
-const express              = require('express');
-const router               = express.Router();
-const pool                 = require('../db');
-const { authenticate, requireRole } = require('../middleware/auth');
-const { generateTicketPDF } = require('../services/pdfService');
+const express               = require('express');
+const router                = express.Router();
+const pool                  = require('../db');
+const { authenticate }      = require('../middleware/auth');
+const { generateReceiptPDF } = require('../services/pdfService');
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/tickets/:bookingId/download
+// GET /api/receipts/:bookingId/download
 // ─────────────────────────────────────────────────────────────────────────────
 router.get('/:bookingId/download', authenticate, async (req, res) => {
   const { bookingId } = req.params;
@@ -28,7 +28,7 @@ router.get('/:bookingId/download', authenticate, async (req, res) => {
   }
 
   try {
-    // ── 1. Fetch booking with joined flight data ──────────────────────────────
+    // ── 1. Fetch booking with flight data ─────────────────────────────────────
     const bookingRes = await pool.query(
       `SELECT
          b.id,
@@ -42,10 +42,10 @@ router.get('/:bookingId/download', authenticate, async (req, res) => {
          f.destination,
          f.departure_time,
          f.arrival_time,
-         f.status      AS flight_status,
-         f.price
-       FROM bookings  b
-       JOIN flights   f ON b.flight_id = f.id
+         f.price,
+         f.status AS flight_status
+       FROM bookings b
+       JOIN flights  f ON b.flight_id = f.id
        WHERE b.id = $1`,
       [bid]
     );
@@ -57,8 +57,6 @@ router.get('/:bookingId/download', authenticate, async (req, res) => {
     const row = bookingRes.rows[0];
 
     // ── 2. Ownership / role check ─────────────────────────────────────────────
-    // Passengers may only download their own ticket.
-    // Admins may download any ticket.
     if (req.user.role === 'passenger') {
       const passengerRes = await pool.query(
         'SELECT id FROM passengers WHERE user_id = $1',
@@ -69,16 +67,15 @@ router.get('/:bookingId/download', authenticate, async (req, res) => {
         passengerRes.rows.length === 0 ||
         passengerRes.rows[0].id !== row.passenger_id
       ) {
-        return res.status(403).json({ error: 'You are not authorised to download this ticket' });
+        return res.status(403).json({ error: 'You are not authorised to download this receipt' });
       }
     } else if (req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Only passengers and admins can download tickets' });
+      return res.status(403).json({ error: 'Only passengers and admins can download receipts' });
     }
 
-    // ── 3. Reject cancelled bookings ─────────────────────────────────────────
-    if (row.booking_status === 'cancelled') {
-      return res.status(400).json({ error: 'Cannot generate a ticket for a cancelled booking' });
-    }
+    // ── 3. Cancelled bookings: still allow receipt (shows refund record) ──────
+    // We deliberately do NOT block cancelled bookings here so passengers
+    // can keep a record of what was paid. The PDF will show the status.
 
     // ── 4. Fetch passenger profile ────────────────────────────────────────────
     const passengerRes = await pool.query(
@@ -109,16 +106,15 @@ router.get('/:bookingId/download', authenticate, async (req, res) => {
       destination:    row.destination,
       departure_time: row.departure_time,
       arrival_time:   row.arrival_time,
-      status:         row.flight_status,
       price:          row.price
     };
 
-    generateTicketPDF(res, { booking, passenger, flight, email: passenger.email });
+    generateReceiptPDF(res, { booking, passenger, flight, email: passenger.email });
 
   } catch (err) {
-    console.error('[GET /api/tickets/:bookingId/download]', err.message);
+    console.error('[GET /api/receipts/:bookingId/download]', err.message);
     if (!res.headersSent) {
-      res.status(500).json({ error: 'Failed to generate ticket PDF' });
+      res.status(500).json({ error: 'Failed to generate receipt PDF' });
     }
   }
 });
