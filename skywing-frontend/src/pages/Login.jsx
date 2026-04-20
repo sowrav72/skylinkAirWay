@@ -24,7 +24,12 @@ export default function Login() {
       const res = await login({ email: form.email.trim().toLowerCase(), password: form.password })
       signIn(res.data.token)
       const role = res.data.user?.role
-      navigate(role === 'staff' ? '/staff/flights' : '/passenger/flights', { replace: true })
+      navigate(
+        role === 'staff' ? '/staff/flights' :
+        role === 'admin' ? '/admin/dashboard' :
+        '/passenger/flights',
+        { replace: true }
+      )
     } catch (err) {
       setError(err.message)
     } finally {

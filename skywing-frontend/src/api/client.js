@@ -83,3 +83,31 @@ export const getStaffProfile    = ()          => client.get('/api/staff/profile'
 export const getStaffFlights    = ()          => client.get('/api/staff/flights')
 export const patchFlightStatus  = (id, body)  => client.patch(`/api/staff/flights/${id}/status`, body)
 export const getFlightPassengers = (id)       => client.get(`/api/staff/flights/${id}/passengers`)
+
+// ─── Admin — Flights ──────────────────────────────────────────────────────────
+export const adminGetFlights     = ()         => client.get('/api/admin/flights')
+export const adminGetFlight      = (id)       => client.get(`/api/admin/flights/${id}`)
+export const adminCreateFlight   = (body)     => client.post('/api/admin/flights', body)
+export const adminUpdateFlight   = (id, body) => client.put(`/api/admin/flights/${id}`, body)
+export const adminDeleteFlight   = (id)       => client.delete(`/api/admin/flights/${id}`)
+
+// ─── Admin — Staff Assignments ────────────────────────────────────────────────
+export const adminGetAssignments    = ()         => client.get('/api/admin/staff-assignments')
+export const adminCreateAssignment  = (body)     => client.post('/api/admin/staff-assignments', body)
+export const adminDeleteAssignment  = (id)       => client.delete(`/api/admin/staff-assignments/${id}`)
+
+// ─── Admin — Users ────────────────────────────────────────────────────────────
+export const adminGetUsers       = (params)   => client.get('/api/admin/users', { params })
+
+// ─── Admin — Bookings ─────────────────────────────────────────────────────────
+export const adminGetBookings    = (params)   => client.get('/api/admin/bookings', { params })
+
+// ─── Admin — Notifications Monitor ───────────────────────────────────────────
+export const adminGetNotifications = (params) => client.get('/api/admin/notifications', { params })
+
+// ─── Admin — Analytics ───────────────────────────────────────────────────────
+export const adminGetAnalytics = () => client.get('/api/admin/analytics')
+
+// ─── Admin — Manual notification trigger ─────────────────────────────────────
+export const adminNotifyPassengers = (flightId, body) =>
+  client.post(`/api/admin/flights/${flightId}/notify`, body)

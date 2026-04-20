@@ -33,7 +33,15 @@ router.use(authenticate, requireRole('admin'));
 // GET /api/admin/flights
 router.get('/flights', async (_req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM flights ORDER BY departure_time ASC');
+    const result = await pool.query(
+      `SELECT
+         f.*,
+         COUNT(b.id) FILTER (WHERE b.booking_status = 'confirmed')::int AS booking_count
+       FROM flights f
+       LEFT JOIN bookings b ON b.flight_id = f.id
+       GROUP BY f.id
+       ORDER BY f.departure_time ASC`
+    );
     res.json({ flights: result.rows, count: result.rows.length });
   } catch (err) {
     console.error('[Admin GET flights]', err.message);
@@ -328,6 +336,297 @@ router.delete('/staff-assignments/:id', async (req, res) => {
   } catch (err) {
     console.error('[Admin DELETE staff-assignment]', err.message);
     res.status(500).json({ error: 'Failed to remove assignment' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// USERS (Phase 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/admin/users?role=&limit=&offset=
+// Returns all users from auth_users joined with their role table for name/email
+router.get('/users', async (req, res) => {
+  const { role, limit = 50, offset = 0 } = req.query;
+  try {
+    const params = [];
+    let whereClause = '';
+    if (role) {
+      params.push(role);
+      whereClause = `WHERE au.role = $${params.length}`;
+    }
+    params.push(parseInt(limit), parseInt(offset));
+
+    const result = await pool.query(
+      `SELECT
+         au.id,
+         au.email,
+         au.role,
+         au.created_at,
+         COALESCE(p.first_name, s.first_name, a.first_name) AS first_name,
+         COALESCE(p.last_name,  s.last_name,  a.last_name)  AS last_name,
+         s.id          AS staff_table_id,
+         s.employee_id,
+         s.position
+       FROM auth_users au
+       LEFT JOIN passengers p ON p.user_id = au.id
+       LEFT JOIN staff      s ON s.user_id = au.id
+       LEFT JOIN admins     a ON a.user_id = au.id
+       ${whereClause}
+       ORDER BY au.created_at DESC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
+    );
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM auth_users au ${whereClause}`,
+      role ? [role] : []
+    );
+
+    res.json({ users: result.rows, total: countResult.rows[0].total });
+  } catch (err) {
+    console.error('[Admin GET users]', err.message);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BOOKINGS (Phase 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/admin/bookings?status=&flight_id=&limit=&offset=
+// Returns all bookings with passenger + flight details
+router.get('/bookings', async (req, res) => {
+  const { status, flight_id, limit = 50, offset = 0 } = req.query;
+  try {
+    const params = [];
+    const conditions = [];
+
+    if (status) {
+      params.push(status);
+      conditions.push(`b.booking_status = $${params.length}`);
+    }
+    if (flight_id) {
+      params.push(parseInt(flight_id));
+      conditions.push(`b.flight_id = $${params.length}`);
+    }
+
+    const whereClause = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+    params.push(parseInt(limit), parseInt(offset));
+
+    const result = await pool.query(
+      `SELECT
+         b.id,
+         b.seat_no,
+         b.booking_status,
+         b.booked_at,
+         p.first_name   AS passenger_first_name,
+         p.last_name    AS passenger_last_name,
+         au.email       AS passenger_email,
+         f.id           AS flight_id,
+         f.flight_number,
+         f.origin,
+         f.destination,
+         f.departure_time,
+         f.status       AS flight_status
+       FROM bookings b
+       JOIN passengers p  ON b.passenger_id = p.id
+       JOIN auth_users au ON p.user_id       = au.id
+       JOIN flights    f  ON b.flight_id     = f.id
+       ${whereClause}
+       ORDER BY b.booked_at DESC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
+    );
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total
+       FROM bookings b
+       JOIN passengers p ON b.passenger_id = p.id
+       JOIN flights    f ON b.flight_id    = f.id
+       ${whereClause}`,
+      params.slice(0, params.length - 2)
+    );
+
+    res.json({ bookings: result.rows, total: countResult.rows[0].total });
+  } catch (err) {
+    console.error('[Admin GET bookings]', err.message);
+    res.status(500).json({ error: 'Failed to fetch bookings' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICATIONS MONITOR (Phase 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/admin/notifications?type=&limit=&offset=
+// Returns all notifications with user + flight info for monitoring
+router.get('/notifications', async (req, res) => {
+  const { type, limit = 50, offset = 0 } = req.query;
+  try {
+    const params = [];
+    let whereClause = '';
+    if (type) {
+      params.push(type);
+      whereClause = `WHERE n.type = $${params.length}`;
+    }
+    params.push(parseInt(limit), parseInt(offset));
+
+    const result = await pool.query(
+      `SELECT
+         n.id,
+         n.type,
+         n.message,
+         n.is_read,
+         n.created_at,
+         au.email       AS user_email,
+         au.role        AS user_role,
+         f.flight_number,
+         f.origin,
+         f.destination
+       FROM notifications n
+       JOIN auth_users au ON n.user_id    = au.id
+       LEFT JOIN flights f ON n.flight_id = f.id
+       ${whereClause}
+       ORDER BY n.created_at DESC
+       LIMIT $${params.length - 1} OFFSET $${params.length}`,
+      params
+    );
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM notifications n ${whereClause}`,
+      type ? [type] : []
+    );
+
+    res.json({ notifications: result.rows, total: countResult.rows[0].total });
+  } catch (err) {
+    console.error('[Admin GET notifications]', err.message);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ANALYTICS (Phase 5 extension)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// GET /api/admin/analytics
+// Single efficient query returns all dashboard counts.
+router.get('/analytics', async (_req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        (SELECT COUNT(*)::int FROM auth_users)                                  AS total_users,
+        (SELECT COUNT(*)::int FROM auth_users WHERE role = 'passenger')         AS total_passengers,
+        (SELECT COUNT(*)::int FROM auth_users WHERE role = 'staff')             AS total_staff,
+        (SELECT COUNT(*)::int FROM bookings)                                    AS total_bookings,
+        (SELECT COUNT(*)::int FROM bookings WHERE booking_status = 'confirmed') AS confirmed_bookings,
+        (SELECT COUNT(*)::int FROM bookings WHERE booking_status = 'cancelled') AS cancelled_bookings,
+        (SELECT COUNT(*)::int FROM flights)                                     AS total_flights,
+        (SELECT COUNT(*)::int FROM flights
+           WHERE status IN ('scheduled','delayed'))                             AS active_flights,
+        (SELECT COUNT(*)::int FROM flights WHERE status = 'cancelled')         AS cancelled_flights
+    `);
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('[Admin GET analytics]', err.message);
+    res.status(500).json({ error: 'Failed to fetch analytics' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MANUAL NOTIFICATION TRIGGER (Phase 5 extension)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// POST /api/admin/flights/:id/notify
+// Body: { type: "flight_update", message: "Custom message" }
+// Sends a custom notification to ALL confirmed passengers of the flight.
+// Runs inside a transaction so failures are atomic.
+router.post('/flights/:id/notify', async (req, res) => {
+  const flightId  = parseInt(req.params.id, 10);
+  const { type = 'flight_updated', message } = req.body;
+
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: 'message is required' });
+  }
+
+  // Accept the spec's "flight_update" alias as well as the DB value "flight_updated"
+  const allowedTypes = ['flight_delayed', 'flight_cancelled', 'flight_updated'];
+  const dbType = type === 'flight_update' ? 'flight_updated' : type;
+  if (!allowedTypes.includes(dbType)) {
+    return res.status(400).json({
+      error: `Invalid type. Accepted: ${allowedTypes.join(', ')} (or "flight_update")`
+    });
+  }
+
+  if (isNaN(flightId) || flightId <= 0) {
+    return res.status(400).json({ error: 'flightId must be a positive integer' });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Verify flight exists
+    const flightRes = await client.query(
+      'SELECT id, flight_number FROM flights WHERE id = $1', [flightId]
+    );
+    if (flightRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Flight not found' });
+    }
+
+    // Resolve all confirmed passengers → auth_users.id
+    const usersRes = await client.query(
+      `SELECT DISTINCT au.id AS user_id
+       FROM bookings   b
+       JOIN passengers p  ON b.passenger_id = p.id
+       JOIN auth_users au ON p.user_id      = au.id
+       WHERE b.flight_id      = $1
+         AND b.booking_status = 'confirmed'
+         AND au.role          = 'passenger'`,
+      [flightId]
+    );
+
+    if (usersRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.json({
+        message:  'No confirmed passengers on this flight — no notifications sent',
+        sent:     0,
+        flight:   flightRes.rows[0].flight_number
+      });
+    }
+
+    // Bulk-insert custom notifications (single parameterised query)
+    const customMessage = message.trim();
+    const values  = [];
+    const params  = [];
+    let   offset  = 1;
+
+    for (const { user_id } of usersRes.rows) {
+      values.push(`($${offset}, $${offset + 1}, $${offset + 2}, $${offset + 3})`);
+      params.push(user_id, dbType, customMessage, flightId);
+      offset += 4;
+    }
+
+    await client.query(
+      `INSERT INTO notifications (user_id, type, message, flight_id) VALUES ${values.join(', ')}`,
+      params
+    );
+
+    await client.query('COMMIT');
+
+    res.json({
+      message:  `Notification sent to ${usersRes.rows.length} passenger(s)`,
+      sent:     usersRes.rows.length,
+      type:     dbType,
+      flight:   flightRes.rows[0].flight_number
+    });
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[Admin POST notify]', err.message);
+    res.status(500).json({ error: 'Failed to send notifications' });
+  } finally {
+    client.release();
   }
 });
 

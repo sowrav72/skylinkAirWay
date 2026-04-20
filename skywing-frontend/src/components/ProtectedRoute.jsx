@@ -10,8 +10,12 @@ export function RequireAuth() {
 
 export function RequireRole({ role }) {
   const { token, role: userRole } = useAuth()
-  if (!token)          return <Navigate to="/login" replace />
+  if (!token)            return <Navigate to="/login" replace />
   if (userRole !== role) return <Navigate to="/login" replace />
+
+  // Admin pages embed AdminLayout themselves — don't double-wrap
+  if (role === 'admin') return <Outlet />
+
   return (
     <Layout>
       <Outlet />
