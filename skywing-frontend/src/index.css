@@ -82,28 +82,31 @@
 
 @layer components {
   .btn-primary {
-    @apply bg-blue text-white font-medium px-4 py-2 text-sm
+    @apply bg-blue text-white font-medium px-4 py-2 text-sm rounded-md
            hover:bg-blue-light active:opacity-90
+           shadow-[0_12px_30px_rgba(37,99,235,0.18)]
            transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .btn-ghost {
-    @apply border border-line text-body font-medium px-4 py-2 text-sm
-           hover:border-muted hover:text-head
+    @apply border border-line text-body font-medium px-4 py-2 text-sm rounded-md
+           hover:border-muted hover:text-head hover:bg-white/[0.03]
            transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .btn-danger {
-    @apply bg-red text-white font-medium px-4 py-2 text-sm
+    @apply bg-red text-white font-medium px-4 py-2 text-sm rounded-md
            hover:bg-red-light active:opacity-90
+           shadow-[0_12px_30px_rgba(220,38,38,0.18)]
            transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .input-field {
-    @apply w-full bg-rail border border-line text-body placeholder-dim
-           px-3 py-2 text-sm outline-none
+    @apply w-full bg-rail/90 border border-line text-body placeholder-dim
+           px-3 py-2.5 text-sm rounded-md outline-none
            focus:border-blue focus:ring-1 focus:ring-blue
            transition-colors duration-150;
   }
   .card {
-    @apply bg-panel border border-line p-5;
+    @apply bg-panel/95 border border-line p-5 rounded-md
+           shadow-[0_20px_50px_rgba(0,0,0,0.18)];
   }
   .label {
     @apply block text-xs font-medium text-muted uppercase tracking-wider mb-1;
@@ -113,4 +116,49 @@
   .status-scheduled  { @apply text-blue-light  bg-blue-dim  border border-blue  px-2 py-0.5 text-xs font-mono; }
   .status-delayed    { @apply text-amber-light bg-amber-dim border border-amber px-2 py-0.5 text-xs font-mono; }
   .status-cancelled-f{ @apply text-red-light   bg-red-dim   border border-red   px-2 py-0.5 text-xs font-mono; }
+}
+
+html.high-contrast body {
+  background: #000000;
+  color: #ffffff;
+}
+
+html.high-contrast .card,
+html.high-contrast .bg-panel,
+html.high-contrast .bg-rail {
+  background: #000000 !important;
+  border-color: #ffffff !important;
+}
+
+html.high-contrast .text-body,
+html.high-contrast .text-dim,
+html.high-contrast .text-muted {
+  color: #ffffff !important;
+}
+
+html.high-contrast .text-head {
+  color: #ffff00 !important;
+}
+
+html.high-contrast .input-field,
+html.high-contrast .btn-ghost,
+html.high-contrast .btn-primary,
+html.high-contrast .btn-danger {
+  border-color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+html.high-contrast .btn-primary {
+  background: #ffff00 !important;
+  color: #000000 !important;
+}
+
+html.high-contrast .btn-ghost {
+  background: #000000 !important;
+  color: #ffffff !important;
+}
+
+html.high-contrast .btn-danger {
+  background: #ff3b30 !important;
+  color: #ffffff !important;
 }

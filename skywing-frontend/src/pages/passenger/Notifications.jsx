@@ -10,6 +10,8 @@ const TYPE_LABELS = {
   flight_delayed:   { label: 'Delayed',  cls: 'text-amber-light bg-amber-dim border-amber' },
   flight_cancelled: { label: 'Cancelled',cls: 'text-red-light   bg-red-dim   border-red'   },
   flight_updated:   { label: 'Updated',  cls: 'text-blue-light  bg-blue-dim  border-blue'  },
+  low_seat_availability: { label: 'Low Seats', cls: 'text-amber-light bg-amber-dim border-amber' },
+  overbooked_route: { label: 'Overbooked', cls: 'text-red-light bg-red-dim border-red' },
 }
 
 function fmt(ts) {

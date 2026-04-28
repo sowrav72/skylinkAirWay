@@ -384,19 +384,26 @@ export default function Home() {
             backgroundSize: '80px 80px',
           }}/>
 
-        {/* Flying plane */}
-        <div className="absolute top-1/3 left-0 w-full pointer-events-none anim-fly">
-          <svg viewBox="0 0 120 40" fill="none" className="w-36 opacity-90" aria-hidden="true">
-            <path d="M110 20L60 8 20 14 8 20l12 6 40-6 50 12 0-12z" fill="white" opacity="0.95"/>
-            <path d="M55 14L50 6l-6 8 11 0z" fill="white" opacity="0.8"/>
-            <path d="M58 26l-5 10-5-10 10 0z" fill="white" opacity="0.7"/>
-          </svg>
+        {/* Flying airplane */}
+        <div className="absolute top-[30%] left-0 w-full pointer-events-none anim-fly">
+          <div className="relative w-44">
+            <div className="absolute inset-y-1/2 left-0 right-14 -translate-y-1/2 h-px bg-[linear-gradient(90deg,rgba(255,255,255,0),rgba(147,197,253,0.24),rgba(255,255,255,0))]" />
+            <svg viewBox="0 0 220 82" fill="none" className="w-44 opacity-95 drop-shadow-[0_10px_30px_rgba(255,255,255,0.08)]" aria-hidden="true">
+              <path d="M198 39c0 4-3 7-7 7h-48l-28 19c-2 1-5 0-5-3l7-16H76L59 61c-2 2-6 1-7-2l6-13H34l-11 7c-3 2-7 0-7-4s4-6 7-6l11 7h24l-6-13c-1-3 5-4 7-2l17 15h41l-7-16c0-3 3-4 5-3l28 19h48c4 0 7 3 7 7z" fill="#F8FBFF"/>
+              <path d="M84 42h36" stroke="#A7C7F6" strokeWidth="2.2" strokeLinecap="round"/>
+              <path d="M146 39h21" stroke="#B9D5FB" strokeWidth="2.4" strokeLinecap="round"/>
+              <path d="M159 31h18" stroke="#D7E7FF" strokeWidth="2" strokeLinecap="round" opacity="0.8"/>
+              <circle cx="174" cy="39" r="2.2" fill="#4C89FF" opacity="0.8"/>
+              <path d="M136 26l9-6 11 8" stroke="#DCEBFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M137 54l9 6 11-8" stroke="#DCEBFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </div>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6 pt-32 pb-12 w-full">
 
           {/* Headline */}
-          <div className="max-w-3xl mb-10">
+          <div className="max-w-3xl mb-12">
             <div className="flex items-center gap-3 mb-5 anim-reveal-up">
               <div className="h-px w-10" style={{ background: '#C9A84C' }}/>
               <span className="text-xs font-mono uppercase tracking-[0.3em]"
@@ -412,6 +419,11 @@ export default function Home() {
               Search hundreds of routes instantly — no account needed.
               Book your perfect flight in minutes.
             </p>
+            <div className="mt-6 flex flex-wrap gap-3 anim-reveal-up delay-400">
+              <span className="text-xs font-mono px-3 py-1.5 border border-white/10 bg-white/[0.03] text-white/55 rounded-full">Live route search</span>
+              <span className="text-xs font-mono px-3 py-1.5 border border-white/10 bg-white/[0.03] text-white/55 rounded-full">Fast booking flow</span>
+              <span className="text-xs font-mono px-3 py-1.5 border border-white/10 bg-white/[0.03] text-white/55 rounded-full">Downloadable travel docs</span>
+            </div>
           </div>
 
           {/* ─────────────────────────────────────────────────────────────────
@@ -423,7 +435,7 @@ export default function Home() {
             className="anim-reveal-up delay-400 max-w-5xl"
           >
             {/* Search bar */}
-            <div className="border border-white/15 bg-white/[0.04] backdrop-blur-sm">
+            <div className="rounded-md border border-white/15 bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.03))] backdrop-blur-md shadow-[0_25px_80px_rgba(0,0,0,0.28)] overflow-hidden">
               <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-white/10">
 
                 {/* From — autocomplete */}

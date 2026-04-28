@@ -26,7 +26,9 @@ const pool = require('../db');
 const NOTIF_TYPE = Object.freeze({
   DELAYED:   'flight_delayed',
   CANCELLED: 'flight_cancelled',
-  UPDATED:   'flight_updated'
+  UPDATED:   'flight_updated',
+  LOW_SEATS: 'low_seat_availability',
+  OVERBOOKED:'overbooked_route'
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -44,6 +46,10 @@ function buildMessage(type, flight) {
       return `Flight ${num} (${route}) has been cancelled. Please contact support to rebook or request a refund.`;
     case NOTIF_TYPE.UPDATED:
       return `Flight ${num} (${route}) details have been updated. Please review your booking.`;
+    case NOTIF_TYPE.LOW_SEATS:
+      return `Flight ${num} (${route}) is nearly full. Only a few seats remain on this route.`;
+    case NOTIF_TYPE.OVERBOOKED:
+      return `Flight ${num} (${route}) is currently flagged as overbooked. Our support team may contact you with options.`;
     default:
       return `There is an update regarding flight ${num} (${route}).`;
   }
@@ -194,11 +200,75 @@ function resolveNotificationType(prev, incoming) {
   return null;
 }
 
+async function syncOperationalPassengerNotifications(userId, client = null) {
+  const db = client || pool;
+
+  const lowSeatInsert = await db.query(
+    `INSERT INTO notifications (user_id, type, message, flight_id)
+     SELECT DISTINCT
+       au.id,
+       $2,
+       'Flight ' || f.flight_number || ' (' || f.origin || ' → ' || f.destination || ') is nearly full. Only ' || f.available_seats || ' seat(s) remain.',
+       f.id
+     FROM auth_users au
+     JOIN passengers p ON p.user_id = au.id
+     JOIN bookings b ON b.passenger_id = p.id
+     JOIN flights f ON f.id = b.flight_id
+     WHERE au.id = $1
+       AND au.role = 'passenger'
+       AND b.booking_status = 'confirmed'
+       AND f.status != 'cancelled'
+       AND f.available_seats BETWEEN 1 AND 3
+       AND NOT EXISTS (
+         SELECT 1
+         FROM notifications n
+         WHERE n.user_id = au.id
+           AND n.flight_id = f.id
+           AND n.type = $2
+       )`,
+    [userId, NOTIF_TYPE.LOW_SEATS]
+  );
+
+  const overbookedInsert = await db.query(
+    `INSERT INTO notifications (user_id, type, message, flight_id)
+     SELECT DISTINCT
+       au.id,
+       $2,
+       'Flight ' || f.flight_number || ' (' || f.origin || ' → ' || f.destination || ') is flagged as overbooked. Our team is reviewing options.',
+       f.id
+     FROM auth_users au
+     JOIN passengers p ON p.user_id = au.id
+     JOIN bookings b ON b.passenger_id = p.id
+     JOIN flights f ON f.id = b.flight_id
+     JOIN (
+       SELECT flight_id, COUNT(*) AS confirmed_count
+       FROM bookings
+       WHERE booking_status = 'confirmed'
+       GROUP BY flight_id
+     ) counts ON counts.flight_id = f.id
+     WHERE au.id = $1
+       AND au.role = 'passenger'
+       AND b.booking_status = 'confirmed'
+       AND counts.confirmed_count > f.total_seats
+       AND NOT EXISTS (
+         SELECT 1
+         FROM notifications n
+         WHERE n.user_id = au.id
+           AND n.flight_id = f.id
+           AND n.type = $2
+       )`,
+    [userId, NOTIF_TYPE.OVERBOOKED]
+  );
+
+  return lowSeatInsert.rowCount + overbookedInsert.rowCount;
+}
+
 module.exports = {
   NOTIF_TYPE,
   notifyFlightPassengers,
   notifyDelayed,
   notifyCancelled,
   notifyUpdated,
-  resolveNotificationType
+  resolveNotificationType,
+  syncOperationalPassengerNotifications
 };
