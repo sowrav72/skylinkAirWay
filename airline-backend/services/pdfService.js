@@ -1,4 +1,4 @@
-'use strict';
+/*'use strict';
 
 const PDFDocument = require('pdfkit');
 
@@ -243,4 +243,243 @@ function generateItineraryPDF(res, { booking, passenger, flight, email }) {
   doc.end();
 }
 
-module.exports = { generateTicketPDF, generateReceiptPDF, generateItineraryPDF };
+module.exports = { generateTicketPDF, generateReceiptPDF, generateItineraryPDF };*/
+
+
+
+'use strict';
+
+const PDFDocument = require('pdfkit');
+const QRCode = require('qrcode');
+const crypto = require('crypto');
+
+const COLORS = {
+  navy: '#0B1B34',
+  blue: '#0F5FD7',
+  blueSoft: '#DCEBFF',
+  gold: '#C9A84C',
+  page: '#F4F7FB',
+  card: '#FFFFFF',
+  stub: '#F7F8FA',
+  text: '#172033',
+  muted: '#6B7280',
+  line: '#D5DCE7',
+  success: '#1C8C5E',
+  danger: '#C74444'
+};
+
+/* ---------------- UTIL ---------------- */
+
+function formatDate(ts) {
+  if (!ts) return 'N/A';
+  return new Date(ts).toUTCString().replace(' GMT', ' UTC');
+}
+
+function money(value) {
+  return `$${Number(value || 0).toFixed(2)}`;
+}
+
+function statusTone(status) {
+  return String(status || '').toLowerCase() === 'cancelled'
+    ? COLORS.danger
+    : COLORS.success;
+}
+
+function createDoc(res, filename) {
+  const doc = new PDFDocument({ margin: 0, size: 'A4' });
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+
+  doc.pipe(res);
+  return doc;
+}
+
+/* ---------------- SAFE TEXT ---------------- */
+
+function drawText(doc, text, x, y, opts = {}) {
+  const {
+    size = 10,
+    color = COLORS.text,
+    font = 'Helvetica',
+    width = 200,
+    align = 'left'
+  } = opts;
+
+  doc
+    .font(font)
+    .fontSize(size)
+    .fillColor(color)
+    .text(String(text ?? 'N/A'), x, y, {
+      width,
+      align,
+      ellipsis: true
+    });
+}
+
+function labelValue(doc, label, value, x, y, width = 120) {
+  drawText(doc, label, x, y, { size: 9, color: COLORS.muted, width });
+  drawText(doc, value, x, y + 12, {
+    size: 11,
+    font: 'Helvetica-Bold',
+    width
+  });
+}
+
+/* ---------------- QR ---------------- */
+
+async function generateQR(booking) {
+  const raw = `${booking.id}-${booking.seat_no}-${Date.now()}`;
+  const hash = crypto.createHash('sha256').update(raw).digest('hex');
+  return await QRCode.toDataURL(hash);
+}
+
+/* ---------------- LAYOUT HELPERS ---------------- */
+
+function drawPerforation(doc, x, top, bottom) {
+  doc.save();
+  doc.lineWidth(1).strokeColor('#C6CBD5');
+
+  for (let y = top; y <= bottom; y += 6) {
+    doc.moveTo(x, y).lineTo(x, y + 3).stroke();
+  }
+
+  doc.restore();
+}
+
+function drawTicketRoute(doc, from, to, y) {
+  const colStart = 40;
+
+  drawText(doc, String(from).slice(0, 3).toUpperCase(), colStart, y, {
+    size: 30,
+    font: 'Helvetica-Bold',
+    width: 80
+  });
+
+  drawText(doc, '→', colStart + 75, y + 2, {
+    size: 22,
+    color: COLORS.blue,
+    width: 30,
+    align: 'center'
+  });
+
+  drawText(doc, String(to).slice(0, 3).toUpperCase(), colStart + 110, y, {
+    size: 30,
+    font: 'Helvetica-Bold',
+    width: 80
+  });
+}
+
+function drawBarcode(doc, x, y, w, h) {
+  doc.save();
+  for (let i = 0; i < w; i += 3) {
+    const barHeight = (i % 10) + 10;
+    doc.rect(x + i, y + (h - barHeight), 2, barHeight).fill(COLORS.navy);
+  }
+  doc.restore();
+}
+
+/* ---------------- MAIN TICKET ---------------- */
+
+async function generateTicketPDF(res, { booking, passenger, flight, email }) {
+  const doc = createDoc(res, `ticket-${booking.id}.pdf`);
+
+  const col1 = 40;
+  const col2 = 200;
+  const col3 = 360;
+
+  /* Background */
+  doc.rect(0, 0, 595.28, 841.89).fill(COLORS.page);
+
+  /* Cards */
+  doc.roundedRect(24, 56, 392, 190, 6).fill(COLORS.card);
+  doc.roundedRect(416, 56, 154, 190, 6).fill(COLORS.stub);
+
+  drawPerforation(doc, 406, 70, 240);
+
+  /* Header */
+  doc.rect(24, 56, 546, 30).fill(COLORS.blue);
+
+  drawText(doc, 'SkyWing Airlines', 40, 64, {
+    size: 16,
+    color: '#fff',
+    font: 'Helvetica-Bold'
+  });
+
+  drawText(doc, 'BOARDING PASS', 430, 66, {
+    size: 10,
+    color: '#EAF3FF',
+    width: 120,
+    align: 'right'
+  });
+
+  /* Ref */
+  drawText(doc, `Ref #${String(booking.id).padStart(6, '0')}`, 40, 100, {
+    size: 10,
+    color: COLORS.muted
+  });
+
+  /* Route */
+  drawTicketRoute(doc, flight.origin, flight.destination, 120);
+
+  /* Passenger Info */
+  labelValue(doc, 'Passenger', `${passenger.first_name} ${passenger.last_name}`, col1, 170, 140);
+  labelValue(doc, 'Flight', flight.flight_number, col2, 170, 100);
+  labelValue(doc, 'Date', formatDate(flight.departure_time).slice(0, 16), col3, 170, 140);
+
+  labelValue(doc, 'Seat', booking.seat_no || 'Auto', col1, 210, 100);
+  labelValue(doc, 'Boarding', formatDate(flight.departure_time).slice(17, 25), col2, 210, 100);
+  labelValue(doc, 'Email', email, col3, 210, 180);
+
+  /* QR Code */
+  const qr = await generateQR(booking);
+  doc.image(qr, 440, 120, { width: 90 });
+
+  /* Stub */
+  drawText(doc, 'BOARDING STUB', 428, 80, { size: 9, color: COLORS.muted });
+  drawText(doc, flight.flight_number, 428, 100, {
+    size: 16,
+    color: COLORS.blue,
+    font: 'Helvetica-Bold'
+  });
+
+  labelValue(doc, 'Seat', booking.seat_no, 428, 130, 80);
+  labelValue(doc, 'Status', booking.booking_status, 428, 170, 100);
+
+  drawBarcode(doc, 428, 200, 120, 40);
+
+  /* Trip Section */
+  const statusColor = statusTone(booking.booking_status);
+
+  doc.roundedRect(24, 260, 546, 100, 6).fill(COLORS.card);
+
+  drawText(doc, 'Trip Details', 40, 280, {
+    size: 12,
+    font: 'Helvetica-Bold'
+  });
+
+  drawText(doc, booking.booking_status.toUpperCase(), 440, 280, {
+    size: 10,
+    color: statusColor,
+    width: 100,
+    align: 'right'
+  });
+
+  labelValue(doc, 'Departure', formatDate(flight.departure_time), col1, 305, 180);
+  labelValue(doc, 'Arrival', formatDate(flight.arrival_time), col2, 305, 180);
+  labelValue(doc, 'Passport', passenger.passport_number || 'N/A', col3, 305, 140);
+
+  drawText(
+    doc,
+    'Please arrive at the gate at least 30 minutes before departure.',
+    40,
+    380,
+    { size: 9, color: COLORS.muted, width: 500 }
+  );
+
+  doc.end();
+}
+
+module.exports = {
+  generateTicketPDF
+};
