@@ -367,11 +367,11 @@ async function generateTicketPDF(res, { booking, passenger, flight, email }) {
   const doc = createDoc(res, `ticket-${booking.id}.pdf`);
 
   const col1 = 40;
-  const col2 = 180;
-  const col3 = 310;
+  const col2 = 172;
+  const col3 = 292;
   const stubX = 420;
   const cardTop = 56;
-  const cardHeight = 212;
+  const cardHeight = 222;
   const tripTop = 292;
   const fromCode = airportCode(flight.origin);
   const toCode = airportCode(flight.destination);
@@ -381,7 +381,7 @@ async function generateTicketPDF(res, { booking, passenger, flight, email }) {
   doc.roundedRect(24, cardTop, 392, cardHeight, 6).fill(COLORS.card);
   doc.roundedRect(stubX, cardTop, 150, cardHeight, 6).fill(COLORS.stub);
 
-  drawPerforation(doc, 406, 60, 272);
+  drawPerforation(doc, 406, 60, 282);
 
   /* Header */
   doc.rect(24, cardTop, 546, 30).fill(COLORS.blue);
@@ -438,29 +438,33 @@ async function generateTicketPDF(res, { booking, passenger, flight, email }) {
 
   /* Info grid */
   labelValue(doc, 'Passenger', `${passenger.first_name} ${passenger.last_name}`, col1, 184, 120);
-  labelValue(doc, 'Flight', flight.flight_number, col2, 184, 90);
-  labelValue(doc, 'Date', formatDate(flight.departure_time).slice(0, 16), col3, 184, 110);
+  labelValue(doc, 'Flight', flight.flight_number, col2, 184, 78);
+  labelValue(doc, 'Date', formatDate(flight.departure_time).slice(0, 16), col3, 184, 92);
 
   labelValue(doc, 'Seat', booking.seat_no, col1, 224, 120);
-  labelValue(doc, 'Boarding', formatDate(flight.departure_time).slice(17, 25), col2, 224, 90);
-  labelValue(doc, 'Email', email, col3, 224, 110);
+  labelValue(doc, 'Boarding', formatDate(flight.departure_time).slice(17, 25), col2, 224, 78);
+  labelValue(doc, 'Email', email, col3, 224, 92);
 
   /* -------- STUB -------- */
-  drawText(doc, 'BOARDING STUB', stubX + 10, 80, { size: 9, color: COLORS.muted });
+  drawText(doc, 'BOARDING STUB', stubX + 16, 82, {
+    size: 9,
+    color: COLORS.muted,
+    width: 110
+  });
 
-  drawText(doc, flight.flight_number, stubX + 10, 100, {
+  drawText(doc, flight.flight_number, stubX + 16, 102, {
     size: 16,
     color: COLORS.blue,
     font: 'Helvetica-Bold'
   });
 
-  labelValue(doc, 'Seat', booking.seat_no, stubX + 10, 130, 100);
-  labelValue(doc, 'Status', booking.booking_status, stubX + 10, 165, 100);
+  labelValue(doc, 'Seat', booking.seat_no, stubX + 16, 132, 100);
+  labelValue(doc, 'Status', booking.booking_status, stubX + 16, 168, 100);
 
   const qr = await generateQR(booking);
-  doc.image(qr, stubX + 30, 190, { width: 72 });
+  doc.image(qr, stubX + 38, 198, { width: 56 });
 
-  drawBarcode(doc, stubX + 15, 280, 110, 34);
+  drawBarcode(doc, stubX + 20, 268, 100, 28);
 
   /* Trip details */
   doc.roundedRect(24, tripTop, 546, 116, 6).fill(COLORS.card);
