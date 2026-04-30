@@ -277,6 +277,24 @@ function money(v) {
   return `$${Number(v || 0).toFixed(2)}`;
 }
 
+function airportCode(value) {
+  const text = String(value || '').trim();
+  if (!text) return 'N/A';
+
+  const words = text.match(/[A-Za-z0-9]+/g) || [];
+  if (words.length >= 3) {
+    return words
+      .slice(0, 3)
+      .map((word) => word[0])
+      .join('')
+      .toUpperCase();
+  }
+
+  const compact = words.join('');
+  if (compact.length >= 3) return compact.slice(0, 3).toUpperCase();
+  return compact.toUpperCase().padEnd(3, 'X');
+}
+
 function statusColor(status) {
   return String(status).toLowerCase() === 'cancelled'
     ? COLORS.danger
@@ -349,19 +367,24 @@ async function generateTicketPDF(res, { booking, passenger, flight, email }) {
   const doc = createDoc(res, `ticket-${booking.id}.pdf`);
 
   const col1 = 40;
-  const col2 = 200;
-  const col3 = 340;
+  const col2 = 180;
+  const col3 = 310;
   const stubX = 420;
+  const cardTop = 56;
+  const cardHeight = 212;
+  const tripTop = 292;
+  const fromCode = airportCode(flight.origin);
+  const toCode = airportCode(flight.destination);
 
   doc.rect(0, 0, 595, 842).fill(COLORS.page);
 
-  doc.roundedRect(24, 56, 392, 200, 6).fill(COLORS.card);
-  doc.roundedRect(stubX, 56, 150, 200, 6).fill(COLORS.stub);
+  doc.roundedRect(24, cardTop, 392, cardHeight, 6).fill(COLORS.card);
+  doc.roundedRect(stubX, cardTop, 150, cardHeight, 6).fill(COLORS.stub);
 
-  drawPerforation(doc, 406, 60, 260);
+  drawPerforation(doc, 406, 60, 272);
 
   /* Header */
-  doc.rect(24, 56, 546, 30).fill(COLORS.blue);
+  doc.rect(24, cardTop, 546, 30).fill(COLORS.blue);
 
   drawText(doc, 'SkyWing Airlines', 40, 64, {
     size: 16,
@@ -382,33 +405,45 @@ async function generateTicketPDF(res, { booking, passenger, flight, email }) {
   });
 
   /* Route */
-  drawText(doc, flight.origin, 40, 120, {
-    size: 32,
+  drawText(doc, fromCode, 40, 120, {
+    size: 30,
     font: 'Helvetica-Bold',
-    width: 100
+    width: 74
   });
 
-  drawText(doc, '→', 120, 125, {
-    size: 20,
+  drawText(doc, '->', 112, 127, {
+    size: 16,
     color: COLORS.blue,
     width: 30,
     align: 'center'
   });
 
-  drawText(doc, flight.destination, 150, 120, {
-    size: 32,
+  drawText(doc, toCode, 150, 120, {
+    size: 30,
     font: 'Helvetica-Bold',
-    width: 100
+    width: 74
+  });
+
+  drawText(doc, flight.origin, 40, 154, {
+    size: 10,
+    color: COLORS.muted,
+    width: 95
+  });
+
+  drawText(doc, flight.destination, 150, 154, {
+    size: 10,
+    color: COLORS.muted,
+    width: 110
   });
 
   /* Info grid */
-  labelValue(doc, 'Passenger', `${passenger.first_name} ${passenger.last_name}`, col1, 170, 140);
-  labelValue(doc, 'Flight', flight.flight_number, col2, 170, 100);
-  labelValue(doc, 'Date', formatDate(flight.departure_time).slice(0, 16), col3, 170, 140);
+  labelValue(doc, 'Passenger', `${passenger.first_name} ${passenger.last_name}`, col1, 184, 120);
+  labelValue(doc, 'Flight', flight.flight_number, col2, 184, 90);
+  labelValue(doc, 'Date', formatDate(flight.departure_time).slice(0, 16), col3, 184, 110);
 
-  labelValue(doc, 'Seat', booking.seat_no, col1, 210, 100);
-  labelValue(doc, 'Boarding', formatDate(flight.departure_time).slice(17, 25), col2, 210, 100);
-  labelValue(doc, 'Email', email, col3, 210, 120);
+  labelValue(doc, 'Seat', booking.seat_no, col1, 224, 120);
+  labelValue(doc, 'Boarding', formatDate(flight.departure_time).slice(17, 25), col2, 224, 90);
+  labelValue(doc, 'Email', email, col3, 224, 110);
 
   /* -------- STUB -------- */
   drawText(doc, 'BOARDING STUB', stubX + 10, 80, { size: 9, color: COLORS.muted });
@@ -423,34 +458,34 @@ async function generateTicketPDF(res, { booking, passenger, flight, email }) {
   labelValue(doc, 'Status', booking.booking_status, stubX + 10, 165, 100);
 
   const qr = await generateQR(booking);
-  doc.image(qr, stubX + 20, 200, { width: 90 });
+  doc.image(qr, stubX + 30, 190, { width: 72 });
 
-  drawBarcode(doc, stubX + 10, 300, 120, 40);
+  drawBarcode(doc, stubX + 15, 280, 110, 34);
 
   /* Trip details */
-  doc.roundedRect(24, 280, 546, 110, 6).fill(COLORS.card);
+  doc.roundedRect(24, tripTop, 546, 116, 6).fill(COLORS.card);
 
-  drawText(doc, 'Trip Details', 40, 300, {
+  drawText(doc, 'Trip Details', 40, tripTop + 18, {
     size: 12,
     font: 'Helvetica-Bold'
   });
 
-  drawText(doc, booking.booking_status.toUpperCase(), 440, 300, {
+  drawText(doc, booking.booking_status.toUpperCase(), 430, tripTop + 18, {
     size: 10,
     color: statusColor(booking.booking_status),
     width: 100,
     align: 'right'
   });
 
-  labelValue(doc, 'Departure', formatDate(flight.departure_time), 40, 325, 150);
-  labelValue(doc, 'Arrival', formatDate(flight.arrival_time), 220, 325, 150);
-  labelValue(doc, 'Passport', passenger.passport_number || 'N/A', 400, 325, 120);
+  labelValue(doc, 'Departure', formatDate(flight.departure_time), 40, tripTop + 44, 150);
+  labelValue(doc, 'Arrival', formatDate(flight.arrival_time), 220, tripTop + 44, 150);
+  labelValue(doc, 'Passport', passenger.passport_number || 'N/A', 400, tripTop + 44, 120);
 
   drawText(
     doc,
     'Please arrive at the gate at least 30 minutes before departure.',
     40,
-    400,
+    420,
     { size: 9, color: COLORS.muted, width: 500 }
   );
 
