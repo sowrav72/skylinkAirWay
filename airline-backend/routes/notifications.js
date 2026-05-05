@@ -16,7 +16,10 @@ const express  = require('express');
 const router   = express.Router();
 const pool     = require('../db');
 const { authenticate } = require('../middleware/auth');
-const { syncOperationalPassengerNotifications } = require('../services/notificationService');
+const {
+  syncOperationalPassengerNotifications,
+  syncOperationalStaffNotifications
+} = require('../services/notificationService');
 
 // All notification routes require a valid JWT (any role)
 router.use(authenticate);
@@ -45,6 +48,8 @@ router.get('/', async (req, res) => {
   try {
     if (req.user.role === 'passenger') {
       await syncOperationalPassengerNotifications(userId);
+    } else if (req.user.role === 'staff') {
+      await syncOperationalStaffNotifications(userId);
     }
 
     // ── Unread count (always returned regardless of filter) ──────────────────
@@ -117,6 +122,8 @@ router.get('/unread', async (req, res) => {
   try {
     if (req.user.role === 'passenger') {
       await syncOperationalPassengerNotifications(req.user.userId);
+    } else if (req.user.role === 'staff') {
+      await syncOperationalStaffNotifications(req.user.userId);
     }
 
     const result = await pool.query(

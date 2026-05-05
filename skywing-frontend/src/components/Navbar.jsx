@@ -43,8 +43,13 @@ export default function Navbar() {
   ]
 
   const staffLinks = [
-    { to: '/staff/flights',  label: 'Flights'  },
-    { to: '/staff/profile',  label: 'Profile'  },
+    { to: '/staff/dashboard', label: 'Dashboard' },
+    { to: '/staff/flights',   label: 'Flights'   },
+    { to: '/staff/bookings',  label: 'Bookings'  },
+    { to: '/staff/reports',   label: 'Reports'   },
+    { to: '/staff/inventory', label: 'Inventory' },
+    { to: '/staff/notifications', label: 'Alerts' },
+    { to: '/staff/profile',   label: 'Profile'   },
   ]
 
   const links = role === 'staff' ? staffLinks : passengerLinks
@@ -53,7 +58,7 @@ export default function Navbar() {
     <header className="bg-panel border-b border-line sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-6">
         {/* Logo */}
-        <Link to={role === 'staff' ? '/staff/flights' : '/passenger/flights'}
+        <Link to={role === 'staff' ? '/staff/dashboard' : '/passenger/flights'}
           className="font-mono text-sm font-bold text-head tracking-tight whitespace-nowrap">
           SKY<span className="text-blue">WING</span>
         </Link>
@@ -66,8 +71,8 @@ export default function Navbar() {
         {/* Right side */}
         <div className="flex items-center gap-3">
           {/* Notification bell — passenger only */}
-          {role === 'passenger' && (
-            <Link to="/passenger/notifications" className="relative text-muted hover:text-head transition-colors">
+          {(role === 'passenger' || role === 'staff') && (
+            <Link to={role === 'staff' ? '/staff/notifications' : '/passenger/notifications'} className="relative text-muted hover:text-head transition-colors">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                 <path d="M13.73 21a2 2 0 0 1-3.46 0"/>

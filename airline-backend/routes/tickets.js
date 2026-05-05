@@ -80,8 +80,8 @@ async function handleTicketDownload(req, res) {
   try {
     const payload = await fetchOwnedBooking(req, bid);
     if (payload.error) return res.status(payload.status).json({ error: payload.error });
-    if (payload.row.booking_status === 'cancelled') {
-      return res.status(400).json({ error: 'Cannot generate a ticket for a cancelled booking' });
+    if (payload.row.booking_status === 'cancelled' || payload.row.booking_status === 'refunded') {
+      return res.status(400).json({ error: 'Cannot generate a ticket for an inactive booking' });
     }
 
     generateTicketPDF(res, {

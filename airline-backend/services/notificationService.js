@@ -263,6 +263,91 @@ async function syncOperationalPassengerNotifications(userId, client = null) {
   return lowSeatInsert.rowCount + overbookedInsert.rowCount;
 }
 
+async function syncOperationalStaffNotifications(userId, client = null) {
+  const db = client || pool;
+
+  const delayedInsert = await db.query(
+    `INSERT INTO notifications (user_id, type, message, flight_id)
+     SELECT DISTINCT
+       au.id,
+       $2,
+       'Assigned flight ' || f.flight_number || ' (' || f.origin || ' → ' || f.destination || ') is delayed and needs crew attention.',
+       f.id
+     FROM auth_users au
+     JOIN staff s ON s.user_id = au.id
+     JOIN staff_assignments sa ON sa.staff_id = s.id
+     JOIN flights f ON f.id = sa.flight_id
+     WHERE au.id = $1
+       AND au.role = 'staff'
+       AND f.status = 'delayed'
+       AND NOT EXISTS (
+         SELECT 1
+         FROM notifications n
+         WHERE n.user_id = au.id
+           AND n.flight_id = f.id
+           AND n.type = $2
+       )`,
+    [userId, NOTIF_TYPE.DELAYED]
+  );
+
+  const lowSeatInsert = await db.query(
+    `INSERT INTO notifications (user_id, type, message, flight_id)
+     SELECT DISTINCT
+       au.id,
+       $2,
+       'Assigned flight ' || f.flight_number || ' (' || f.origin || ' → ' || f.destination || ') has low seat availability.',
+       f.id
+     FROM auth_users au
+     JOIN staff s ON s.user_id = au.id
+     JOIN staff_assignments sa ON sa.staff_id = s.id
+     JOIN flights f ON f.id = sa.flight_id
+     WHERE au.id = $1
+       AND au.role = 'staff'
+       AND f.available_seats BETWEEN 1 AND 5
+       AND f.status != 'cancelled'
+       AND NOT EXISTS (
+         SELECT 1
+         FROM notifications n
+         WHERE n.user_id = au.id
+           AND n.flight_id = f.id
+           AND n.type = $2
+       )`,
+    [userId, NOTIF_TYPE.LOW_SEATS]
+  );
+
+  const overbookedInsert = await db.query(
+    `INSERT INTO notifications (user_id, type, message, flight_id)
+     SELECT DISTINCT
+       au.id,
+       $2,
+       'Assigned flight ' || f.flight_number || ' (' || f.origin || ' → ' || f.destination || ') is flagged as overbooked.',
+       f.id
+     FROM auth_users au
+     JOIN staff s ON s.user_id = au.id
+     JOIN staff_assignments sa ON sa.staff_id = s.id
+     JOIN flights f ON f.id = sa.flight_id
+     JOIN (
+       SELECT flight_id, COUNT(*) AS confirmed_count
+       FROM bookings
+       WHERE booking_status = 'confirmed'
+       GROUP BY flight_id
+     ) counts ON counts.flight_id = f.id
+     WHERE au.id = $1
+       AND au.role = 'staff'
+       AND counts.confirmed_count > f.total_seats
+       AND NOT EXISTS (
+         SELECT 1
+         FROM notifications n
+         WHERE n.user_id = au.id
+           AND n.flight_id = f.id
+           AND n.type = $2
+       )`,
+    [userId, NOTIF_TYPE.OVERBOOKED]
+  );
+
+  return delayedInsert.rowCount + lowSeatInsert.rowCount + overbookedInsert.rowCount;
+}
+
 module.exports = {
   NOTIF_TYPE,
   notifyFlightPassengers,
@@ -270,5 +355,6 @@ module.exports = {
   notifyCancelled,
   notifyUpdated,
   resolveNotificationType,
-  syncOperationalPassengerNotifications
+  syncOperationalPassengerNotifications,
+  syncOperationalStaffNotifications
 };

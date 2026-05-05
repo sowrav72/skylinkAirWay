@@ -14,7 +14,8 @@ const {
   calculateAddOnTotal,
   tierFromPoints,
   badgesFromSummary,
-  estimateRouteMiles
+  estimateRouteMiles,
+  estimateRouteKilometers
 } = require('../services/passengerInsights');
 
 const CANCEL_WINDOW_HOURS = 24;
@@ -64,6 +65,7 @@ async function getBookingAnalytics(db, passengerId) {
        f.origin,
        f.destination,
        f.departure_time,
+       f.arrival_time,
        f.price,
        f.status AS flight_status
      FROM bookings b
@@ -75,13 +77,20 @@ async function getBookingAnalytics(db, passengerId) {
   const now = Date.now();
   let totalSpend = 0;
   let totalMiles = 0;
+  let totalKilometers = 0;
   let completedTrips = 0;
   let upcomingTrips = 0;
   let cancelledTrips = 0;
+  const distanceBuckets = new Map();
 
   for (const row of result.rows) {
-    const isCancelled = row.booking_status === 'cancelled' || row.flight_status === 'cancelled';
+    const isCancelled =
+      row.booking_status === 'cancelled' ||
+      row.booking_status === 'refunded' ||
+      row.flight_status === 'cancelled';
     const depTime = new Date(row.departure_time).getTime();
+    const routeMiles = estimateRouteMiles(row.origin, row.destination);
+    const routeKilometers = estimateRouteKilometers(row.origin, row.destination);
 
     if (isCancelled) {
       cancelledTrips += 1;
@@ -90,21 +99,62 @@ async function getBookingAnalytics(db, passengerId) {
 
     const bookingTotal = Number(row.price || 0) + Number(row.add_on_total || 0);
     totalSpend += bookingTotal;
-    totalMiles += estimateRouteMiles(row.origin, row.destination);
+    totalMiles += routeMiles;
+    totalKilometers += routeKilometers;
 
     if (depTime < now) {
       completedTrips += 1;
     } else {
       upcomingTrips += 1;
     }
+
+    if (row.flight_status === 'arrived') {
+      const completedAt = row.arrival_time || row.departure_time;
+      const completedDate = new Date(completedAt);
+      if (!Number.isNaN(completedDate.getTime())) {
+        const bucketKey = `${completedDate.getUTCFullYear()}-${String(completedDate.getUTCMonth() + 1).padStart(2, '0')}`;
+        const bucket = distanceBuckets.get(bucketKey) || {
+          period: bucketKey,
+          label: completedDate.toLocaleString('en-GB', { month: 'short', year: 'numeric', timeZone: 'UTC' }),
+          tripCount: 0,
+          distanceMiles: 0,
+          distanceKilometers: 0
+        };
+
+        bucket.tripCount += 1;
+        bucket.distanceMiles += routeMiles;
+        bucket.distanceKilometers += routeKilometers;
+        distanceBuckets.set(bucketKey, bucket);
+      }
+    }
   }
+
+  let cumulativeMiles = 0;
+  let cumulativeKilometers = 0;
+  const distanceTimeline = [...distanceBuckets.entries()]
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([, bucket]) => {
+      cumulativeMiles += bucket.distanceMiles;
+      cumulativeKilometers += bucket.distanceKilometers;
+      return {
+        period: bucket.period,
+        label: bucket.label,
+        tripCount: bucket.tripCount,
+        distanceMiles: bucket.distanceMiles,
+        distanceKilometers: bucket.distanceKilometers,
+        cumulativeMiles,
+        cumulativeKilometers
+      };
+    });
 
   return {
     totalSpend: Number(totalSpend.toFixed(2)),
     totalMiles,
+    totalKilometers,
     completedTrips,
     upcomingTrips,
-    cancelledTrips
+    cancelledTrips,
+    distanceTimeline
   };
 }
 
@@ -183,7 +233,10 @@ async function resolveBookingWithFlight(db, bookingId, passengerId, lock = false
 
 function buildPolicyFlags(booking) {
   const timeLeftHours = hoursUntil(booking.departure_time);
-  const isCancelled = booking.booking_status === 'cancelled' || booking.flight_status === 'cancelled';
+  const isCancelled =
+    booking.booking_status === 'cancelled' ||
+    booking.booking_status === 'refunded' ||
+    booking.flight_status === 'cancelled';
 
   return {
     can_cancel: !isCancelled && (timeLeftHours >= CANCEL_WINDOW_HOURS || booking.flight_status === 'cancelled'),
@@ -872,7 +925,7 @@ router.get('/bookings', async (req, res) => {
     const bookings = result.rows.map((row) => {
       const policies = buildPolicyFlags(row);
       const bucket =
-        row.booking_status === 'cancelled' || row.flight_status === 'cancelled'
+        row.booking_status === 'cancelled' || row.booking_status === 'refunded' || row.flight_status === 'cancelled'
           ? 'cancelled'
           : new Date(row.departure_time).getTime() < Date.now()
             ? 'past'
@@ -1036,9 +1089,9 @@ router.delete('/bookings/:id', async (req, res) => {
       return res.status(404).json({ error: 'Booking not found' });
     }
 
-    if (booking.booking_status === 'cancelled') {
+    if (booking.booking_status === 'cancelled' || booking.booking_status === 'refunded') {
       await client.query('ROLLBACK');
-      return res.status(400).json({ error: 'Booking is already cancelled' });
+      return res.status(400).json({ error: 'Booking is no longer active' });
     }
 
     const timeLeftHours = hoursUntil(booking.departure_time);

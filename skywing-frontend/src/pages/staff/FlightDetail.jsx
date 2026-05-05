@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getFlightPassengers } from '../../api/client'
+import { getFlightPassengers, getSeats } from '../../api/client'
 import ErrorBox from '../../components/ui/ErrorBox'
-import Spinner  from '../../components/ui/Spinner'
+import Spinner from '../../components/ui/Spinner'
 
 function fmt(ts) {
   if (!ts) return '—'
@@ -13,20 +13,26 @@ function fmt(ts) {
 }
 
 export default function FlightDetail() {
-  const { id }    = useParams()
-  const navigate  = useNavigate()
+  const { id } = useParams()
+  const navigate = useNavigate()
 
-  const [data,    setData]    = useState(null)
-  const [loading, setLoad]    = useState(true)
-  const [error,   setError]   = useState('')
-  const [search,  setSearch]  = useState('')
+  const [data, setData] = useState(null)
+  const [seats, setSeats] = useState(null)
+  const [loading, setLoad] = useState(true)
+  const [error, setError] = useState('')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     let active = true
     async function load() {
       try {
-        const res = await getFlightPassengers(id)
-        if (active) setData(res.data)
+        const [passengerRes, seatsRes] = await Promise.all([
+          getFlightPassengers(id),
+          getSeats(id),
+        ])
+        if (!active) return
+        setData(passengerRes.data)
+        setSeats(seatsRes.data)
       } catch (err) {
         if (active) setError(err.message)
       } finally {
@@ -37,7 +43,7 @@ export default function FlightDetail() {
     return () => { active = false }
   }, [id])
 
-  const passengers = (data?.passengers ?? []).filter(p => {
+  const passengers = (data?.passengers ?? []).filter((p) => {
     const q = search.toLowerCase()
     return !q || `${p.first_name} ${p.last_name}`.toLowerCase().includes(q)
       || p.seat_no?.toLowerCase().includes(q)
@@ -46,21 +52,15 @@ export default function FlightDetail() {
 
   return (
     <div className="space-y-5 animate-fade-in">
-      <button onClick={() => navigate(-1)} className="text-dim hover:text-head text-sm flex items-center gap-1 font-mono">
+      <button onClick={() => navigate(-1)} className="text-dim hover:text-head text-sm flex items-center gap-1">
         ← Back to flights
       </button>
 
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-head font-mono">
-            Passenger List
-          </h1>
-          {data && (
-            <p className="text-dim text-sm mt-0.5 font-mono">
-              Flight {data.flight_number} · {data.count} confirmed passenger{data.count !== 1 ? 's' : ''}
-            </p>
-          )}
-        </div>
+      <div>
+        <h1 className="text-2xl font-semibold text-head">Passenger Manifest & Seat Map</h1>
+        {data ? (
+          <p className="text-dim text-sm mt-1">Flight {data.flight_number} · {data.count} confirmed passengers</p>
+        ) : null}
       </div>
 
       <ErrorBox message={error} />
@@ -69,56 +69,66 @@ export default function FlightDetail() {
         <div className="flex items-center justify-center h-48"><Spinner size="lg" /></div>
       ) : (
         <>
-          {/* Search */}
-          {(data?.passengers?.length ?? 0) > 0 && (
-            <div>
-              <input
-                className="input-field max-w-xs"
-                placeholder="Search name, seat, passport…"
-                value={search}
-                onChange={e => setSearch(e.target.value)}
-              />
-            </div>
-          )}
+          <div className="grid xl:grid-cols-[1fr,0.9fr] gap-5">
+            <section className="card">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h2 className="text-sm font-semibold text-head">Passenger List</h2>
+                <input
+                  className="input-field max-w-xs"
+                  placeholder="Search name, seat, passport"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
 
-          {passengers.length === 0 ? (
-            <div className="card text-center py-12">
-              <p className="text-dim">
-                {search ? 'No passengers match your search.' : 'No confirmed passengers on this flight.'}
-              </p>
-            </div>
-          ) : (
-            /* Table */
-            <div className="card p-0 overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-line">
-                    {['Seat', 'Name', 'Passport', 'Booked At', 'Status'].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-xs text-muted uppercase tracking-wider font-medium font-mono">
-                        {h}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {passengers.map((p, i) => (
-                    <tr key={i}
-                      className="border-b border-line last:border-0 hover:bg-rail transition-colors">
-                      <td className="px-4 py-3 font-mono text-blue-light font-bold">{p.seat_no}</td>
-                      <td className="px-4 py-3 text-head font-medium">
-                        {p.first_name} {p.last_name}
-                      </td>
-                      <td className="px-4 py-3 font-mono text-muted">{p.passport_number || '—'}</td>
-                      <td className="px-4 py-3 font-mono text-muted text-xs">{fmt(p.booked_at)}</td>
-                      <td className="px-4 py-3">
+              {passengers.length === 0 ? (
+                <p className="text-dim text-sm">No passengers match your search.</p>
+              ) : (
+                <div className="space-y-2">
+                  {passengers.map((p, index) => (
+                    <div key={`${p.seat_no}-${index}`} className="border border-line p-3 flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-head font-medium">{p.first_name} {p.last_name}</p>
+                        <p className="text-dim text-xs mt-1">Passport {p.passport_number || '—'} · Booked {fmt(p.booked_at)}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
                         <span className="status-confirmed">{p.booking_status?.toUpperCase()}</span>
-                      </td>
-                    </tr>
+                        <span className="status-scheduled">{p.seat_no}</span>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+                </div>
+              )}
+            </section>
+
+            <section className="card">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <h2 className="text-sm font-semibold text-head">Seat Map</h2>
+                  <p className="text-dim text-xs mt-1">{seats?.booked_count ?? 0} booked · {seats?.available_seats ?? 0} available</p>
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <span className="status-confirmed">Booked</span>
+                  <span className="status-scheduled">Available</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-6 gap-2">
+                {(seats?.seat_map ?? []).map((seat) => (
+                  <div
+                    key={seat.seat_no}
+                    className={`border p-2 text-center text-xs font-mono ${
+                      seat.status === 'booked'
+                        ? 'border-blue bg-blue-dim text-blue-light'
+                        : 'border-line text-body'
+                    }`}
+                  >
+                    {seat.seat_no}
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
         </>
       )}
     </div>

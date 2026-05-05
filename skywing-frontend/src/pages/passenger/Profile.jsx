@@ -17,6 +17,7 @@ import ErrorBox from '../../components/ui/ErrorBox'
 import Spinner from '../../components/ui/Spinner'
 import { useToast } from '../../components/ui/Toast'
 import { useAuth } from '../../contexts/AuthContext'
+import DistanceTimelineChart from '../../components/passenger/DistanceTimelineChart'
 
 const PAYMENT_OPTIONS = [
   ['visa', 'Visa'],
@@ -305,6 +306,10 @@ export default function Profile() {
               <p className="text-head font-mono text-lg">{profileData?.analytics?.totalMiles ?? 0}</p>
             </div>
             <div>
+              <p className="label">Kilometers</p>
+              <p className="text-head font-mono text-lg">{profileData?.analytics?.totalKilometers ?? 0}</p>
+            </div>
+            <div>
               <p className="label">Spend</p>
               <p className="text-head font-mono text-lg">${profileData?.analytics?.totalSpend ?? 0}</p>
             </div>
@@ -319,6 +324,8 @@ export default function Profile() {
           </div>
         </section>
       </div>
+
+      <DistanceTimelineChart timeline={profileData?.analytics?.distanceTimeline ?? []} />
 
       <ErrorBox message={error} />
 

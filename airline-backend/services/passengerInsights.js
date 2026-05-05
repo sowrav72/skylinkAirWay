@@ -130,6 +130,11 @@ function estimateRouteMiles(origin, destination) {
   return Math.round(earthRadiusMiles * c);
 }
 
+function estimateRouteKilometers(origin, destination) {
+  const miles = estimateRouteMiles(origin, destination);
+  return Math.round(miles * 1.60934);
+}
+
 module.exports = {
   MEAL_SURCHARGES,
   BAGGAGE_RATE_PER_KG,
@@ -137,5 +142,6 @@ module.exports = {
   calculateAddOnTotal,
   tierFromPoints,
   badgesFromSummary,
-  estimateRouteMiles
+  estimateRouteMiles,
+  estimateRouteKilometers
 };

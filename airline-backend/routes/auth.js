@@ -3,6 +3,7 @@ const router   = express.Router();
 const bcrypt   = require('bcryptjs');
 const jwt      = require('jsonwebtoken');
 const pool     = require('../db');
+const STAFF_PASSWORD_POLICY = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /api/auth/register/passenger
@@ -73,8 +74,10 @@ router.post('/register/staff', async (req, res) => {
       error: 'Required fields: email, password, first_name, last_name'
     });
   }
-  if (password.length < 6) {
-    return res.status(400).json({ error: 'Password must be at least 6 characters' });
+  if (!STAFF_PASSWORD_POLICY.test(password || '')) {
+    return res.status(400).json({
+      error: 'Staff password must be at least 8 characters and include uppercase, lowercase, number, and special character'
+    });
   }
 
   const client = await pool.connect();

@@ -15,7 +15,12 @@ import PaxProfile       from './pages/passenger/Profile'
 import PaxNotifications from './pages/passenger/Notifications'
 
 // Staff pages
+import StaffDashboard from './pages/staff/Dashboard'
 import StaffFlights  from './pages/staff/Flights'
+import StaffBookings from './pages/staff/Bookings'
+import StaffReports from './pages/staff/Reports'
+import StaffInventory from './pages/staff/Inventory'
+import StaffNotifications from './pages/staff/Notifications'
 import StaffProfile  from './pages/staff/Profile'
 import FlightDetail  from './pages/staff/FlightDetail'
 
@@ -48,7 +53,12 @@ export default function App() {
 
           {/* Staff */}
           <Route element={<RequireRole role="staff" />}>
+            <Route path="/staff/dashboard"  element={<StaffDashboard />} />
             <Route path="/staff/flights"    element={<StaffFlights />} />
+            <Route path="/staff/bookings"   element={<StaffBookings />} />
+            <Route path="/staff/reports"    element={<StaffReports />} />
+            <Route path="/staff/inventory"  element={<StaffInventory />} />
+            <Route path="/staff/notifications" element={<StaffNotifications />} />
             <Route path="/staff/flights/:id" element={<FlightDetail />} />
             <Route path="/staff/profile"    element={<StaffProfile />} />
           </Route>
