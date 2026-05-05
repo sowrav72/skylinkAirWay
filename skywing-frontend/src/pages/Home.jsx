@@ -16,6 +16,7 @@ import { useAuth }                  from '../contexts/AuthContext'
 import { publicSearchFlights, searchFlights } from '../api/client'
 import AutocompleteInput            from '../components/AutocompleteInput'
 import FlightResultCard             from '../components/FlightResultCard'
+import ThemeToggle                  from '../components/ui/ThemeToggle'
 
 const MAX_RESULTS = 20   // FIX 5: cap displayed results
 
@@ -167,12 +168,15 @@ function useCounter(target, duration = 2000, start = false) {
 
 // ─── Navbar ───────────────────────────────────────────────────────────────────
 function PublicNav({ scrolled }) {
-  const { token, role } = useAuth()
-  const dashLink = role === 'staff' ? '/staff/flights' : '/passenger/flights'
+  const { token, role, prefs } = useAuth()
+  const isDark = prefs.themeMode === 'dark'
+  const dashLink = role === 'staff' ? '/staff/dashboard' : '/passenger/flights'
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300
-      ${scrolled ? 'bg-[#050A14]/95 backdrop-blur-md border-b border-white/5 py-3' : 'py-5'}`}>
+      ${scrolled
+        ? `${isDark ? 'bg-[#050A14]/95 border-white/5' : 'bg-white/88 border-slate-200/80 shadow-[0_18px_40px_rgba(148,163,184,0.18)]'} backdrop-blur-md border-b py-3`
+        : 'py-5'}`}>
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
           <div className="w-8 h-8">
@@ -182,36 +186,37 @@ function PublicNav({ scrolled }) {
               <path d="M2 24h28" stroke="#C9A84C" strokeWidth="1.5"/>
             </svg>
           </div>
-          <span className="font-display text-xl font-bold text-white tracking-wide">
-            Sky<span style={{ color: '#C9A84C' }}>Wing</span>
+          <span className={`font-display text-xl font-bold tracking-wide ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            Sky<span className="text-amber-500">Wing</span>
           </span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">
           {['Destinations', 'Experience', 'About'].map(l => (
             <a key={l} href={`#${l.toLowerCase()}`}
-              className="text-sm font-body text-white/60 hover:text-white transition-colors duration-200">
+              className={`text-sm font-body transition-colors duration-200 ${isDark ? 'text-white/60 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               {l}
             </a>
           ))}
         </div>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle variant="hero" compact />
           {token ? (
             <Link to={dashLink}
-              className="text-sm font-medium text-white border border-white/20
-                         px-4 py-2 hover:border-white/50 hover:bg-white/5 transition-all duration-200">
+              className={`text-sm font-medium border px-4 py-2 transition-all duration-200 ${isDark
+                ? 'text-white border-white/20 hover:border-white/50 hover:bg-white/5'
+                : 'text-slate-800 border-slate-300 hover:border-slate-400 hover:bg-slate-100/80'}`}>
               Dashboard →
             </Link>
           ) : (
             <>
               <Link to="/login"
-                className="text-sm font-medium text-white/70 hover:text-white transition-colors px-3 py-2">
+                className={`text-sm font-medium transition-colors px-3 py-2 ${isDark ? 'text-white/70 hover:text-white' : 'text-slate-600 hover:text-slate-950'}`}>
                 Sign In
               </Link>
               <Link to="/register"
-                className="text-sm font-medium text-[#050A14] px-4 py-2 hover:opacity-90 transition-opacity"
-                style={{ background: '#C9A84C' }}>
+                className="text-sm font-medium text-slate-950 px-4 py-2 hover:opacity-90 transition-opacity bg-amber-400">
                 Get Started
               </Link>
             </>
@@ -225,8 +230,9 @@ function PublicNav({ scrolled }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function Home() {
   const navigate        = useNavigate()
-  const { token, role } = useAuth()
+  const { token, role, prefs } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()   // FIX 8
+  const isDark = prefs.themeMode === 'dark'
 
   // ── Scroll state ─────────────────────────────────────────────────────────────
   const [scrolled, setScrolled] = useState(false)
@@ -356,7 +362,7 @@ export default function Home() {
   }, [token, navigate, handleSearch])
 
   return (
-    <div className="bg-[#050A14] text-white min-h-screen overflow-x-hidden">
+    <div className={`home-shell min-h-screen overflow-x-hidden transition-colors duration-300 ${isDark ? 'bg-[#050A14] text-white' : 'bg-[linear-gradient(180deg,#f5f7fb_0%,#eef4ff_42%,#f8fbff_100%)] text-slate-900'}`}>
       <PublicNav scrolled={scrolled} />
 
       {/* ══════════════════════════════════════════════════════════════════
@@ -368,19 +374,23 @@ export default function Home() {
         <svg className="absolute inset-0 w-full h-full pointer-events-none" aria-hidden="true">
           {STARS.map(s => (
             <circle key={s.id} cx={`${s.x}%`} cy={`${s.y}%`} r={s.r}
-              fill="white" opacity={s.o}
+              fill={isDark ? 'white' : '#2563eb'} opacity={isDark ? s.o : s.o * 0.28}
               style={{ animation: `star-pulse ${s.d}s ease-in-out ${s.id * 0.07}s infinite` }}/>
           ))}
         </svg>
 
         {/* Horizon glow */}
         <div className="absolute bottom-0 left-0 right-0 h-64 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(30,111,255,0.18) 0%, transparent 70%)' }}/>
+          style={{ background: isDark
+            ? 'radial-gradient(ellipse 80% 60% at 50% 100%, rgba(30,111,255,0.18) 0%, transparent 70%)'
+            : 'radial-gradient(ellipse 85% 65% at 50% 100%, rgba(96,165,250,0.24) 0%, rgba(191,219,254,0.12) 36%, transparent 72%)' }}/>
 
         {/* Grid */}
         <div className="absolute inset-0 pointer-events-none opacity-[0.025]"
           style={{
-            backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+            backgroundImage: isDark
+              ? 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)'
+              : 'linear-gradient(rgba(37,99,235,0.22) 1px, transparent 1px), linear-gradient(90deg, rgba(37,99,235,0.22) 1px, transparent 1px)',
             backgroundSize: '80px 80px',
           }}/>
 
@@ -405,24 +415,21 @@ export default function Home() {
           {/* Headline */}
           <div className="max-w-3xl mb-12">
             <div className="flex items-center gap-3 mb-5 anim-reveal-up">
-              <div className="h-px w-10" style={{ background: '#C9A84C' }}/>
-              <span className="text-xs font-mono uppercase tracking-[0.3em]"
-                style={{ color: '#C9A84C' }}>World-Class Aviation</span>
+              <div className="h-px w-10 bg-amber-400"/>
+              <span className="text-xs font-mono uppercase tracking-[0.3em] text-amber-500">World-Class Aviation</span>
             </div>
             <h1 className="font-display leading-none mb-5">
-              <span className="block text-6xl md:text-8xl font-light text-white anim-reveal-up delay-100"
-                style={{ letterSpacing: '-0.02em' }}>Fly Beyond</span>
-              <span className="block text-6xl md:text-8xl font-bold anim-shimmer anim-reveal-up delay-200"
-                style={{ letterSpacing: '-0.02em' }}>The Horizon</span>
+              <span className={`block text-6xl md:text-8xl font-light anim-reveal-up delay-100 ${isDark ? 'text-white' : 'text-slate-900'}`}>Fly Beyond</span>
+              <span className="block text-6xl md:text-8xl font-bold anim-shimmer anim-reveal-up delay-200">The Horizon</span>
             </h1>
-            <p className="font-body text-white/50 text-lg max-w-xl leading-relaxed anim-reveal-up delay-300">
+            <p className={`font-body text-lg max-w-xl leading-relaxed anim-reveal-up delay-300 ${isDark ? 'text-white/50' : 'text-slate-600'}`}>
               Search hundreds of routes instantly — no account needed.
               Book your perfect flight in minutes.
             </p>
             <div className="mt-6 flex flex-wrap gap-3 anim-reveal-up delay-400">
-              <span className="text-xs font-mono px-3 py-1.5 border border-white/10 bg-white/[0.03] text-white/55 rounded-full">Live route search</span>
-              <span className="text-xs font-mono px-3 py-1.5 border border-white/10 bg-white/[0.03] text-white/55 rounded-full">Fast booking flow</span>
-              <span className="text-xs font-mono px-3 py-1.5 border border-white/10 bg-white/[0.03] text-white/55 rounded-full">Downloadable travel docs</span>
+              <span className={`text-xs font-mono px-3 py-1.5 border rounded-full ${isDark ? 'border-white/10 bg-white/[0.03] text-white/55' : 'border-blue-100 bg-white/85 text-slate-600 shadow-[0_10px_30px_rgba(148,163,184,0.12)]'}`}>Live route search</span>
+              <span className={`text-xs font-mono px-3 py-1.5 border rounded-full ${isDark ? 'border-white/10 bg-white/[0.03] text-white/55' : 'border-blue-100 bg-white/85 text-slate-600 shadow-[0_10px_30px_rgba(148,163,184,0.12)]'}`}>Fast booking flow</span>
+              <span className={`text-xs font-mono px-3 py-1.5 border rounded-full ${isDark ? 'border-white/10 bg-white/[0.03] text-white/55' : 'border-blue-100 bg-white/85 text-slate-600 shadow-[0_10px_30px_rgba(148,163,184,0.12)]'}`}>Downloadable travel docs</span>
             </div>
           </div>
 

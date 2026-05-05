@@ -4,6 +4,7 @@ import { login } from '../api/client'
 import { useAuth } from '../contexts/AuthContext'
 import ErrorBox from '../components/ui/ErrorBox'
 import Spinner from '../components/ui/Spinner'
+import ThemeToggle from '../components/ui/ThemeToggle'
 
 export default function Login() {
   const { signIn } = useAuth()
@@ -36,7 +37,7 @@ export default function Login() {
       signIn(res.data.token)
       const role = res.data.user?.role
       navigate(
-        role === 'staff' ? '/staff/flights' :
+        role === 'staff' ? '/staff/dashboard' :
         role === 'admin' ? '/admin/dashboard' :
         '/passenger/flights',
         { replace: true }
@@ -51,6 +52,9 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-ink relative overflow-hidden flex items-center justify-center px-4 py-10">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(201,168,76,0.14),transparent_28%)]" />
+      <div className="absolute right-4 top-4 z-10">
+        <ThemeToggle />
+      </div>
 
       <div className="w-full max-w-sm relative">
         <div className="mb-8 text-center">
@@ -60,7 +64,7 @@ export default function Login() {
           <p className="text-dim text-xs mt-2 font-mono tracking-[0.25em]">AIRLINE MANAGEMENT SYSTEM</p>
         </div>
 
-        <div className="bg-panel/95 border border-white/10 rounded-md p-7 space-y-5 shadow-[0_30px_80px_rgba(0,0,0,0.38)] backdrop-blur-sm relative">
+        <div className="card p-7 space-y-5 backdrop-blur-sm relative">
           <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(201,168,76,0.85),transparent)]" />
           <h2 className="text-sm font-semibold text-head uppercase tracking-widest font-mono">Sign In</h2>
 

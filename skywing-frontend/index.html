@@ -12,11 +12,32 @@
     />
     <style>
       * { box-sizing: border-box; }
-      body { margin: 0; background: #0B1120; color: #D1D5DB; }
+      :root {
+        --boot-ink: #f5f7fb;
+        --boot-body: #334155;
+        --boot-rail: #edf2f9;
+        --boot-line: #d1dbe8;
+      }
+      html[data-theme='dark'] {
+        --boot-ink: #0b1120;
+        --boot-body: #d1d5db;
+        --boot-rail: #111827;
+        --boot-line: #374151;
+      }
+      body { margin: 0; background: var(--boot-ink); color: var(--boot-body); }
       ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-track { background: #111827; }
-      ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+      ::-webkit-scrollbar-track { background: var(--boot-rail); }
+      ::-webkit-scrollbar-thumb { background: var(--boot-line); border-radius: 3px; }
     </style>
+    <script>
+      (function () {
+        try {
+          var theme = localStorage.getItem('sw_theme') || 'light';
+          document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'dark' : 'light');
+          document.documentElement.style.colorScheme = theme === 'dark' ? 'dark' : 'light';
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useNotificationCount } from '../hooks/useNotifications'
+import ThemeToggle from './ui/ThemeToggle'
 
 function NavLink({ to, children }) {
   const { pathname } = useLocation()
@@ -70,6 +71,7 @@ export default function Navbar() {
 
         {/* Right side */}
         <div className="flex items-center gap-3">
+          <ThemeToggle compact />
           {/* Notification bell — passenger only */}
           {(role === 'passenger' || role === 'staff') && (
             <Link to={role === 'staff' ? '/staff/notifications' : '/passenger/notifications'} className="relative text-muted hover:text-head transition-colors">
@@ -132,6 +134,7 @@ export default function Navbar() {
       {/* Mobile nav */}
       {menuOpen && (
         <div className="sm:hidden bg-panel border-t border-line px-4 pb-4 pt-3 flex flex-col gap-3 animate-slide-down">
+          <ThemeToggle />
           {links.map(l => <NavLink key={l.to} to={l.to}>{l.label}</NavLink>)}
           <hr className="border-line" />
           <button onClick={handleSignOut} className="text-left text-sm text-muted hover:text-head">

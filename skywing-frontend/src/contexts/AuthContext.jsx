@@ -2,10 +2,12 @@ import { createContext, useContext, useState, useCallback, useEffect, useMemo, u
 
 const AuthContext = createContext(null)
 const PREFS_KEY = 'sw_passenger_prefs'
+const THEME_KEY = 'sw_theme'
 const DEFAULT_PREFS = {
   sessionTimeoutMins: 15,
   highContrastEnabled: false,
   screenReaderEnabled: true,
+  themeMode: 'light',
 }
 
 function decodeToken(token) {
@@ -25,8 +27,9 @@ function isExpired(decoded) {
 function loadPrefs() {
   try {
     const raw = localStorage.getItem(PREFS_KEY)
-    if (!raw) return DEFAULT_PREFS
-    return { ...DEFAULT_PREFS, ...JSON.parse(raw) }
+    const themeMode = localStorage.getItem(THEME_KEY) || DEFAULT_PREFS.themeMode
+    if (!raw) return { ...DEFAULT_PREFS, themeMode }
+    return { ...DEFAULT_PREFS, ...JSON.parse(raw), themeMode }
   } catch {
     return DEFAULT_PREFS
   }
@@ -52,6 +55,7 @@ export function AuthProvider({ children }) {
     setPrefs((prev) => {
       const merged = { ...prev, ...next }
       localStorage.setItem(PREFS_KEY, JSON.stringify(merged))
+      localStorage.setItem(THEME_KEY, merged.themeMode || 'light')
       return merged
     })
   }, [])
@@ -72,6 +76,8 @@ export function AuthProvider({ children }) {
     const root = document.documentElement
     root.classList.toggle('high-contrast', Boolean(prefs.highContrastEnabled))
     root.setAttribute('data-screen-reader', prefs.screenReaderEnabled ? 'on' : 'off')
+    root.setAttribute('data-theme', prefs.themeMode === 'dark' ? 'dark' : 'light')
+    root.style.colorScheme = prefs.themeMode === 'dark' ? 'dark' : 'light'
   }, [prefs])
 
   useEffect(() => {

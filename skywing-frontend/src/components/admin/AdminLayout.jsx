@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import ThemeToggle from '../ui/ThemeToggle'
 
 const NAV = [
   {
@@ -110,6 +111,9 @@ export default function AdminLayout({ children }) {
 
         {/* User info */}
         <div className="px-4 py-3 border-t border-line">
+          <div className="mb-3">
+            <ThemeToggle />
+          </div>
           <p className="text-xs text-muted font-mono truncate">{user?.email}</p>
           <button
             onClick={handleSignOut}

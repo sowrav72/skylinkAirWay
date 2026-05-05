@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
+  darkMode: ['selector', '[data-theme="dark"]'],
   theme: {
     extend: {
       fontFamily: {
@@ -8,33 +9,33 @@ export default {
         sans:  ['"Outfit"', 'sans-serif'],
       },
       colors: {
-        ink:  '#0B1120',
-        panel:'#111827',
-        rail: '#1F2937',
-        line: '#374151',
-        dim:  '#6B7280',
-        muted:'#9CA3AF',
-        body: '#D1D5DB',
-        head: '#F9FAFB',
+        ink:  'rgb(var(--color-ink) / <alpha-value>)',
+        panel:'rgb(var(--color-panel) / <alpha-value>)',
+        rail: 'rgb(var(--color-rail) / <alpha-value>)',
+        line: 'rgb(var(--color-line) / <alpha-value>)',
+        dim:  'rgb(var(--color-dim) / <alpha-value>)',
+        muted:'rgb(var(--color-muted) / <alpha-value>)',
+        body: 'rgb(var(--color-body) / <alpha-value>)',
+        head: 'rgb(var(--color-head) / <alpha-value>)',
         blue: {
-          DEFAULT: '#2563EB',
-          light:   '#3B82F6',
-          dim:     '#1E3A5F',
+          DEFAULT: 'rgb(var(--color-blue) / <alpha-value>)',
+          light:   'rgb(var(--color-blue-light) / <alpha-value>)',
+          dim:     'rgb(var(--color-blue-dim) / <alpha-value>)',
         },
         amber:{
-          DEFAULT: '#D97706',
-          light:   '#F59E0B',
-          dim:     '#451A03',
+          DEFAULT: 'rgb(var(--color-amber) / <alpha-value>)',
+          light:   'rgb(var(--color-amber-light) / <alpha-value>)',
+          dim:     'rgb(var(--color-amber-dim) / <alpha-value>)',
         },
         red:  {
-          DEFAULT: '#DC2626',
-          light:   '#EF4444',
-          dim:     '#450A0A',
+          DEFAULT: 'rgb(var(--color-red) / <alpha-value>)',
+          light:   'rgb(var(--color-red-light) / <alpha-value>)',
+          dim:     'rgb(var(--color-red-dim) / <alpha-value>)',
         },
         green:{
-          DEFAULT: '#16A34A',
-          light:   '#22C55E',
-          dim:     '#052E16',
+          DEFAULT: 'rgb(var(--color-green) / <alpha-value>)',
+          light:   'rgb(var(--color-green-light) / <alpha-value>)',
+          dim:     'rgb(var(--color-green-dim) / <alpha-value>)',
         },
       },
       animation: {

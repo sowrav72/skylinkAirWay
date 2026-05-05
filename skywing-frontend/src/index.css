@@ -7,6 +7,61 @@
 @layer base {
   html { font-family: 'Outfit', sans-serif; }
   h1,h2,h3,h4,h5,h6 { font-family: 'Outfit', sans-serif; }
+  :root {
+    --color-ink: 245 247 251;
+    --color-panel: 255 255 255;
+    --color-rail: 237 242 249;
+    --color-line: 209 219 232;
+    --color-dim: 100 116 139;
+    --color-muted: 71 85 105;
+    --color-body: 51 65 85;
+    --color-head: 15 23 42;
+    --color-blue: 37 99 235;
+    --color-blue-light: 29 78 216;
+    --color-blue-dim: 219 234 254;
+    --color-amber: 217 119 6;
+    --color-amber-light: 180 83 9;
+    --color-amber-dim: 255 247 237;
+    --color-red: 220 38 38;
+    --color-red-light: 185 28 28;
+    --color-red-dim: 254 226 226;
+    --color-green: 22 163 74;
+    --color-green-light: 21 128 61;
+    --color-green-dim: 220 252 231;
+    --shadow-card: 0 18px 48px rgba(148, 163, 184, 0.18);
+    --shadow-panel: 0 30px 80px rgba(15, 23, 42, 0.12);
+    --surface-glow: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92));
+  }
+  html[data-theme='dark'] {
+    --color-ink: 11 17 32;
+    --color-panel: 17 24 39;
+    --color-rail: 31 41 55;
+    --color-line: 55 65 81;
+    --color-dim: 107 114 128;
+    --color-muted: 156 163 175;
+    --color-body: 209 213 219;
+    --color-head: 249 250 251;
+    --color-blue: 37 99 235;
+    --color-blue-light: 96 165 250;
+    --color-blue-dim: 30 58 95;
+    --color-amber: 217 119 6;
+    --color-amber-light: 245 158 11;
+    --color-amber-dim: 69 26 3;
+    --color-red: 220 38 38;
+    --color-red-light: 248 113 113;
+    --color-red-dim: 69 10 10;
+    --color-green: 22 163 74;
+    --color-green-light: 74 222 128;
+    --color-green-dim: 5 46 22;
+    --shadow-card: 0 20px 50px rgba(0, 0, 0, 0.18);
+    --shadow-panel: 0 30px 80px rgba(0, 0, 0, 0.38);
+    --surface-glow: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  }
+  body {
+    background: rgb(var(--color-ink));
+    color: rgb(var(--color-body));
+    transition: background-color 180ms ease, color 180ms ease;
+  }
 }
 
 /* ── Homepage-specific animations ───────────────────────────────────────── */
@@ -84,19 +139,19 @@
   .btn-primary {
     @apply bg-blue text-white font-medium px-4 py-2 text-sm rounded-md
            hover:bg-blue-light active:opacity-90
-           shadow-[0_12px_30px_rgba(37,99,235,0.18)]
            transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.18);
   }
   .btn-ghost {
     @apply border border-line text-body font-medium px-4 py-2 text-sm rounded-md
-           hover:border-muted hover:text-head hover:bg-white/[0.03]
+           hover:border-muted hover:text-head hover:bg-rail
            transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
   }
   .btn-danger {
     @apply bg-red text-white font-medium px-4 py-2 text-sm rounded-md
            hover:bg-red-light active:opacity-90
-           shadow-[0_12px_30px_rgba(220,38,38,0.18)]
            transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+    box-shadow: 0 12px 30px rgba(220, 38, 38, 0.18);
   }
   .input-field {
     @apply w-full bg-rail/90 border border-line text-body placeholder-dim
@@ -106,7 +161,9 @@
   }
   .card {
     @apply bg-panel/95 border border-line p-5 rounded-md
-           shadow-[0_20px_50px_rgba(0,0,0,0.18)];
+           transition-colors duration-150;
+    box-shadow: var(--shadow-card);
+    background-image: var(--surface-glow);
   }
   .label {
     @apply block text-xs font-medium text-muted uppercase tracking-wider mb-1;
@@ -116,6 +173,65 @@
   .status-scheduled  { @apply text-blue-light  bg-blue-dim  border border-blue  px-2 py-0.5 text-xs font-mono; }
   .status-delayed    { @apply text-amber-light bg-amber-dim border border-amber px-2 py-0.5 text-xs font-mono; }
   .status-cancelled-f{ @apply text-red-light   bg-red-dim   border border-red   px-2 py-0.5 text-xs font-mono; }
+}
+
+html[data-theme='light'] ::selection {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+html[data-theme='light'] .bg-panel\/95 {
+  box-shadow: var(--shadow-panel);
+}
+
+html[data-theme='light'] .home-shell {
+  background:
+    radial-gradient(circle at top center, rgba(191, 219, 254, 0.45), transparent 32%),
+    linear-gradient(180deg, #f5f7fb 0%, #eef4ff 42%, #f8fbff 100%);
+}
+
+html[data-theme='light'] .home-shell .text-white,
+html[data-theme='light'] .home-shell .text-white\/80,
+html[data-theme='light'] .home-shell .text-white\/70,
+html[data-theme='light'] .home-shell .text-white\/60 {
+  color: rgb(15 23 42) !important;
+}
+
+html[data-theme='light'] .home-shell .text-white\/50,
+html[data-theme='light'] .home-shell .text-white\/40,
+html[data-theme='light'] .home-shell .text-white\/35,
+html[data-theme='light'] .home-shell .text-white\/30,
+html[data-theme='light'] .home-shell .text-white\/28,
+html[data-theme='light'] .home-shell .text-white\/25,
+html[data-theme='light'] .home-shell .text-white\/22,
+html[data-theme='light'] .home-shell .text-white\/20 {
+  color: rgb(100 116 139) !important;
+}
+
+html[data-theme='light'] .home-shell .border-white\/5,
+html[data-theme='light'] .home-shell .border-white\/8,
+html[data-theme='light'] .home-shell .border-white\/10,
+html[data-theme='light'] .home-shell .border-white\/15,
+html[data-theme='light'] .home-shell .border-white\/20,
+html[data-theme='light'] .home-shell .border-white\/30,
+html[data-theme='light'] .home-shell .border-white\/40,
+html[data-theme='light'] .home-shell .border-white\/50 {
+  border-color: rgba(203, 213, 225, 0.9) !important;
+}
+
+html[data-theme='light'] .home-shell .bg-white\/\[0\.02\],
+html[data-theme='light'] .home-shell .bg-white\/\[0\.03\],
+html[data-theme='light'] .home-shell .bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.72) !important;
+}
+
+html[data-theme='light'] .home-shell .bg-\[\#060C18\],
+html[data-theme='light'] .home-shell .bg-\[\#050A14\] {
+  background-color: rgba(255, 255, 255, 0.3) !important;
+}
+
+html[data-theme='light'] .home-shell footer,
+html[data-theme='light'] .home-shell section {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 html.high-contrast body {
